@@ -37,6 +37,15 @@ class CommandRepository(private val dao: CommandDao) {
     suspend fun findUnansweredBySeq(seq: Int): Command? =
         dao.findUnansweredBySeq(seq, M.ROLE_SEND)
 
+    /**
+     * 按 SEQ 找「还没终结」的手机发出命令（待回复或只回了受理）。
+     *
+     * 终结态（已执行 / 无法识别 / 错误 / 超时）不参与匹配：SEQ 会回绕，
+     * 这样上一轮循环的历史记录不会被新一轮的回执改写。
+     */
+    suspend fun findOpenBySeq(seq: Int): Command? =
+        dao.findOpenBySeq(seq, M.ROLE_SEND, M.ackStatusName(M.ACK_ST_RECEIVED))
+
     /** 删除当前列表对应的那一段（规则和 query 完全一致） */
     suspend fun delete(time: Long, isAfter: Boolean) =
         if (isAfter) dao.deleteAfter(time) else dao.deleteBefore(time)

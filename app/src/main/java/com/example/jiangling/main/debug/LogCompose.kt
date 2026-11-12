@@ -3,6 +3,7 @@ package com.example.jiangling.main.debug
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,9 +19,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -67,13 +71,25 @@ fun LogCompose(viewModel: MainViewModel, onBack: () -> Unit) {
     var sortAsc by remember { mutableStateOf(false) }                                // 排序方向
     var time by remember { mutableStateOf(viewModel.firstConnectTime) }             // 基准时间点
     var isAfter by remember { mutableStateOf(true) }                                // true=之后，false=之前
-    var label by remember { mutableStateOf("当前") }                                // 查询按钮第二行文字
-    var showDateDialog by remember { mutableStateOf(false) }                        // 弹窗开关
+    var label by remember { mutableStateOf("当前") }                                // 查询文字
+    var showDateDialog by remember { mutableStateOf(false) }                        // 日期弹窗开关
+    var levelFilter by remember { mutableStateOf(M.LOG_LEVEL_DEBUG) }                // 等级筛选，默认 D
+    var showLevelMenu by remember { mutableStateOf(false) }                         // 等级下拉开关
 
     // ======== 从 ViewModel 读数据 ========
     val logs by viewModel.logs.collectAsState()
     val dates by viewModel.logDates.collectAsState()
     val message by viewModel.message.collectAsState()
+
+    // 当前等级下的日志；等级只做本地筛选，时间/排序仍由 ViewModel 查询
+    val displayedLogs = remember(logs, levelFilter) {
+        logs.filter { it.level.equals(levelFilter, ignoreCase = true) }
+    }
+
+    // 时间、方向、排序变化时重新查询（日志页首次进入也走这里）
+    LaunchedEffect(time, isAfter, sortAsc) {
+        viewModel.queryLogs(time, isAfter, sortAsc)
+    }
 
 
     // ======== Toast ========
@@ -91,59 +107,75 @@ fun LogCompose(viewModel: MainViewModel, onBack: () -> Unit) {
             .fillMaxSize() //match_parent,height+width
             .padding(horizontal = 16.dp, vertical = 12.dp)//写在column里面 = padding,外面 = layout_margin
     ) {
-        // 副标题：当前条数 + 当前范围（label 就是页面上选择的时间范围文案）
-        Text(
-            text = "共 ${logs.size} 条 · 范围：$label",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(6.dp))
-
-        // 菜单栏
-        Row(//row = LinearLayout+horizontal
-            modifier = Modifier.fillMaxWidth(),//layout_width = match_parent,parent = column
-            verticalAlignment = Alignment.CenterVertically//linearLayout+gravity = center_vertical
+        // 菜单栏：降序 / 等级筛选 / 查询 / 清空，全部排在同一行
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically
         ) {
 
             // ---- ① 排序按钮：降序 ⇄ 升序 ----
-            // 文案跟着 sortAsc 变，点一下翻转本地状态；
-            // 状态变了 → 上面的 LaunchedEffect 重新跑 → 等于一次新查询。
-            TextButton(//button
+            TextButton(
                 onClick = { sortAsc = !sortAsc },
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)//contentPadding =>button专有padding left = 8dp,right = 8dp,top = 8dp,bottom = 8dp
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Text(//textview
+                Text(
                     text = if (sortAsc) "升序 ↑" else "降序 ↓",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            // ---- ② 查询按钮：第一行固定"查询:"，第二行显示当前范围 ----
-            // 默认显示"当前"（= firstConnectTime 之后）；选了日期后显示"2026-11-01 后"。
+            // ---- ② 等级筛选：默认 D，点开选 D / E / W / I（与线路取值 0/1/2/3 一致）----
+            Box {
+                TextButton(
+                    onClick = { showLevelMenu = true },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "等级：$levelFilter ▾",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                DropdownMenu(
+                    expanded = showLevelMenu,
+                    onDismissRequest = { showLevelMenu = false }
+                ) {
+                    listOf(
+                        M.LOG_LEVEL_DEBUG,
+                        M.LOG_LEVEL_ERROR,
+                        M.LOG_LEVEL_WARNING,
+                        M.LOG_LEVEL_INFO
+                    ).forEach { level ->
+                        DropdownMenuItem(
+                            text = { Text("$level  ${M.logLevelText(level)}") },
+                            onClick = {
+                                levelFilter = level
+                                showLevelMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            // ---- ③ 查询：单行显示当前范围 ----
             TextButton(
                 onClick = { showDateDialog = true },
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "查询:", style = MaterialTheme.typography.labelLarge)
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = "查询：$label",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
 
-            // 弹簧：占满中间剩余空间 → 把后面的按钮推到最右
-            Spacer(Modifier.weight(1f))//width = 0dp+height = wrap_content +layout_weight = 1,占位
-
-            // ---- ③ 清空当前：只删当前列表（参数由本页面传） ----
-            // 全 App 只有这一个删除入口，没有"清空全部"。
-            // enabled = logs.isNotEmpty()：列表空的时候按钮变灰，避免误点。
+            // ---- ④ 清空当前：只删当前列表（参数由本页面传） ----
             TextButton(
                 onClick = { viewModel.deleteLogs(time, isAfter) },
-                enabled = logs.isNotEmpty(),//enabled = false不可点击，onClick无效，
+                enabled = displayedLogs.isNotEmpty(),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(text = "清空当前", style = MaterialTheme.typography.labelLarge)
@@ -153,7 +185,7 @@ fun LogCompose(viewModel: MainViewModel, onBack: () -> Unit) {
         Spacer(Modifier.height(10.dp))//view:layout_width = 10dp,layout_height = wrap_content,高度占位，也等效下面控件layout_marginTop = 10dp
 
         // ==================== 列表 / 空状态 ====================
-        if (logs.isEmpty()) {
+        if (displayedLogs.isEmpty()) {
             // Box.fillMaxSize + contentAlignment.Center = 在剩余空间里居中显示提示
             Box(//FragmeLayout
                 modifier = Modifier.fillMaxSize(),
@@ -181,7 +213,7 @@ fun LogCompose(viewModel: MainViewModel, onBack: () -> Unit) {
                 contentPadding = PaddingValues(bottom = 12.dp)//paddingBottom = 12dp
             ) {
                 // key = it.id：数据库主键，保证每条日志身份唯一，增删时不闪烁
-                items(logs, key = { it.id }) { log ->
+                items(displayedLogs, key = { it.id }) { log ->
                     LogItem(log)
                 }
             }
@@ -219,7 +251,7 @@ fun LogCompose(viewModel: MainViewModel, onBack: () -> Unit) {
 
 /**
  * 单条日志卡片。
- * 左边是等级色块（D / W / E），右边是时间、等级文字和内容。
+ * 左边是等级色块（D / E / W / I），右边是时间、等级文字和内容。
  */
 @Composable
 private fun LogItem(log: Log) {
@@ -273,6 +305,7 @@ private fun LogItem(log: Log) {
  * 想调整"警告橙 / 错误红 / 普通灰蓝"，直接改这里的 Color(0x...)。
  */
 private fun logLevelColor(level: String): Color = when (level) {
+    M.LOG_LEVEL_INFO -> Color(0xFF2E7D32)
     M.LOG_LEVEL_WARNING -> Color(0xFFEF6C00)
     M.LOG_LEVEL_ERROR -> Color(0xFFC62828)
     else -> Color(0xFF546E7A)

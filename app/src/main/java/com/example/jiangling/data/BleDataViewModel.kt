@@ -3,8 +3,8 @@ package com.example.jiangling.data
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.jiangling.ble.BleManager
 import com.example.jiangling.ble.Frame
+import com.example.jiangling.ble.FrameCodec
 import com.example.jiangling.data.command.Command
 import com.example.jiangling.data.command.CommandRepository
 import com.example.jiangling.data.log.LogRepository
@@ -45,11 +45,11 @@ data class DeviceInfo(
 
 /**
  * ======================================================================
- *  BleDataViewModel —— 蓝牙数据的"唯一处理者"
+ *  BleDataViewModel —— 协议数据的"唯一处理者"（数据层，仅 WiFi）
  * ======================================================================
  *
  *  【职责】
- *    1) 收集 BleManager.frames 解析出的帧（CMD / ACK / LOG / DAT）；
+ *    1) 接收 WifiLink 解析出的帧（CMD / ACK / LOG / DAT）；
  *    2) 把帧翻译成业务对象并落库：
  *       - ACK → 按 SEQ 回填命令回复（回复时间、回复状态）
  *       - 板→App 的 CMD → 建命令记录 + 回 ACK（含 64 条 SEQ 去重）
@@ -58,13 +58,13 @@ data class DeviceInfo(
  *    3) 发送命令时负责 "发出去 + 建记录 + 入待确认队列"。
  *
  *  【不负责】
- *    - 蓝牙连接生命周期（BleManager 负责）
+ *    - WiFi 连接生命周期（[com.example.jiangling.net.WifiLink] 负责）
  *    - 帧的字节解析（FrameCodec 负责）
  *    - 页面查询（MainViewModel 用仓库做只读查询）
  *
  *  【协作关系】
- *    BleManager（单例） --frames--> 本类 --仓库--> Room
- *                                  --carStatus--> MainViewModel 合并进 status 给 UI
+ *    WifiLink --frames--> 本类 --仓库--> Room
+ *                         --carStatus--> MainViewModel 合并进 status 给 UI
  *    本类**不引用 MainViewModel**，所以不会形成循环依赖。
  *
  *  【行为约定（V1.7）】
@@ -81,7 +81,29 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     private val commandRepository = CommandRepository(database.commandDao())
     private val logRepository = LogRepository(database.logDao())
 
-    private val ble = BleManager.BLE
+    // ======================================================================
+    //  命令出口（只有 WiFi；本类只管组帧前的 PAYLOAD 与记账）
+    // ======================================================================
+
+    /**
+     * 命令出口：由 MainViewModel 注入（WiFi 的 UDP 8081）。
+     * 返回 true = 已交给传输层。
+     */
+    var transport: ((kindType: Int, payload: ByteArray, seq: Byte) -> Boolean)? = null
+
+    /**
+     * 已编好字节的原始出口：用于 ACK 这类不走命令记录的帧。
+     * MainViewModel 注入 `wifi.send`，和 [transport] 走同一条 WiFi 链路。
+     */
+    var rawTransport: ((bytes: ByteArray) -> Boolean)? = null
+
+    /** CMD 全局 SEQ：全 App 唯一的一套（协议要求 App 侧 SEQ 唯一） */
+    private var cmdSeqCounter: Byte = 0
+
+    private fun nextCmdSeq(): Byte {
+        cmdSeqCounter = if (cmdSeqCounter >= 255) 1 else (cmdSeqCounter + 1).toByte()
+        return cmdSeqCounter
+    }
 
     // ======================================================================
     //  小车实时运行状态（DAT 帧填充，只在内存）
@@ -90,8 +112,8 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     /**
      * 小车遥测状态（只包含 DAT 帧能填的字段，连接字段由 MainViewModel 维护）。
      *
-     * 数据来源：BleManager.frames 里的 DAT 帧。
-     * 蓝牙断开后不再收到 DAT，字段停在最后一次收到的值；
+     * 数据来源：WifiLink 解析出的 DAT 帧。
+     * WiFi 断开后不再收到 DAT，字段停在最后一次收到的值；
      * 进程重启则回到默认值。
      */
     private val _carStatus = MutableStateFlow(CarStatus())
@@ -114,6 +136,22 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     var onNotice: ((String) -> Unit)? = null
 
     /**
+     * 最近一次 ACK 结果（按 SEQ 区分），供「配网」这类需要明确成功/失败反馈的流程使用。
+     *
+     * - [AckEvent.status] 为协议 ACK 状态（0~6，见 `M.ACK_ST_*`）；
+     * - 超时兜底也发一条，[AckEvent.status] = [ACK_STATUS_TIMEOUT]（-1），理由在 [AckEvent.statusText]。
+     */
+    data class AckEvent(
+        val seq: Int,
+        val kindType: Int,
+        val status: Int,
+        val statusText: String
+    )
+
+    private val _ackEvents = MutableStateFlow<AckEvent?>(null)
+    val ackEvents: StateFlow<AckEvent?> = _ackEvents.asStateFlow()
+
+    /**
      * 是否允许解析 DAT。
      *
      * 《通信协议》第 6.4 / 12.3 节：协议版本不匹配时握手 ACK 回 ACK_ST_ERROR(5)、resetDone=0，
@@ -123,10 +161,7 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     private var datParseEnabled = true
 
     init {
-        // 帧只在这里消费；BleManager 不解析内容，MainViewModel 也拿不到帧
-        viewModelScope.launch {
-            ble.frames.collect { handleFrame(it) }
-        }
+        // 帧统一由 WifiLink 解析后经 onExternalFrame 送进来，本类不直接连任何链路
     }
 
     // ======================================================================
@@ -134,15 +169,27 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     // ======================================================================
 
     /**
-     * 发送命令并建本地记录。
+     * 发送命令并建本地记录（int 参数入口）。
      *
      * @return 本次实际使用的 SEQ；发送失败返回 null（由 MainViewModel 提示）
      */
     fun sendCommand(kindType: Int, param: Int): Byte? {
-        // V1.7：参数语义按命令分组，不再"一刀切"
         val payload = payloadOf(kindType, param)
+        return sendCommandRaw(
+            kindType,
+            payload,
+            cmdContent(kindType, if (payload.isEmpty()) 0 else U.u8(payload, 0))
+        )
+    }
 
-        val seq = ble.sendCmd(kindType, payload) ?: return null
+    /**
+     * 直接按 PAYLOAD 发送（变长命令走这里，例如 WiFi 凭据）。
+     *
+     * @return 本次实际使用的 SEQ；发送失败返回 null
+     */
+    fun sendCommandRaw(kindType: Int, payload: ByteArray, content: String): Byte? {
+        val seq = nextCmdSeq()
+        if (!send(kindType, payload, seq)) return null
 
         // 先入待确认队列（内存，最多 64 条），再落库建记录
         enqueuePending(seq.toInt(), kindType)
@@ -154,7 +201,7 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
                         seq = seq.toInt(),
                         role = M.ROLE_SEND,
                         kindType = kindType,
-                        content = cmdContent(kindType, if (payload.isEmpty()) 0 else U.u8(payload, 0)),
+                        content = content,
                         code = frameCode(M.KIND_CMD, kindType, payload),
                         sendTime = System.currentTimeMillis()
                     )
@@ -165,13 +212,89 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * 按 KIND_TYPE 组装 PAYLOAD：**唯一组装入口在 [M.cmdPayload]**，
-     * 调试页的长度校验也调 [M.cmdLen]，保证"校验的长度"和实际发出的 PAYLOAD 长度一致。
+     * 真正的发送出口：交给 MainViewModel 注入的 [transport]（WiFi UDP 8081）。
+     * 帧字节由 WifiLink 用同一套 [FrameCodec.encode] 生成。
+     */
+    private fun send(kindType: Int, payload: ByteArray, seq: Byte): Boolean =
+        transport?.invoke(kindType, payload, seq) ?: false
+
+    // ---- WiFi 配置（0xC4~0xC7）专用入口，都不走通用 int 参数组装 ----
+
+    /** 选择 WiFi 模式：0=STA / 1=AP / 2=APSTA，越界由 [M.cmdPayload] 裁剪 */
+    fun sendWifiMode(mode: Int): Byte? = sendCommand(M.CMD_WIFI_MODE, mode)
+
+    /** 下发路由器凭据（`0xC5`），PAYLOAD 为 `[ssidLen][SSID][密码]`，变长不补齐 */
+    fun sendWifiStaConfig(ssid: String, password: String): Byte? =
+        sendWifiCredential(M.CMD_WIFI_STA_CONFIG, ssid, password)
+
+    /** 下发热点凭据（`0xC6`），布局同 `0xC5` */
+    fun sendWifiApConfig(ssid: String, password: String): Byte? =
+        sendWifiCredential(M.CMD_WIFI_AP_CONFIG, ssid, password)
+
+    /**
+     * 提交初始化（`0xC8`）：凭据必须先由 [sendWifiStaConfig] 下发。
      *
-     * - 无参数：`CMD_STOP` / `CMD_REQ_RECORD` / `CMD_REQ_INFO` → 0 字节；
+     * @param mode 0=STA（连路由器/手机热点）/ 1=AP / 2=APSTA
+     */
+    fun sendInitCommit(mode: Int): Byte? = sendCommand(M.CMD_INIT_COMMIT, mode)
+
+    /** 查询初始化状态（`0xC9`）：只读，不改任何状态；结果由 `0x87 DAT_INIT_STATE` 补发 */
+    fun sendInitStatus(): Byte? = sendCommand(M.CMD_INIT_STATUS, 0)
+
+    /** 清空本次运行的配网数据（`0xCA`，PAYLOAD 固定 `0x5A`），板子回 ACK 3 后重启回 AP */
+    fun sendInitFactoryReset(): Byte? = sendCommandRaw(
+        M.CMD_INIT_FACTORY_RESET,
+        M.cmdPayload(M.CMD_INIT_FACTORY_RESET, 0),
+        "清空配网数据 0xCA"
+    )
+
+    /**
+     * 运动矢量（`0xEB`）流式帧：`[drive][turn]`，各 int8 `-100`~`+100`。
+     *
+     * `drive` 正 = 前进；`turn` 正 = **左转**（与 [M.CMD_MOVE_VECTOR] 的定稿定义一致）。
+     *
+     * 流式帧刻意**不进待确认队列、不落库**：5 Hz 持续下发时不该按 4 s 超时刷提示，
+     * 也不该每秒写 5 条无意义记录；App 只负责把帧发出去，超时自停是车端责任。
+     */
+    fun sendMoveVector(drive: Int, turn: Int): Boolean =
+        send(M.CMD_MOVE_VECTOR, vectorPayload(drive, turn), nextCmdSeq())
+
+    /**
+     * 云台矢量（`0xEC`）流式帧：`[pan][tilt]`，各 int8 `-100`~`+100`。
+     *
+     * `pan` 正 = 向右；`tilt` 正 = 向上。与移动帧相互独立、独立计时。
+     */
+    fun sendGimbalVector(pan: Int, tilt: Int): Boolean =
+        send(M.CMD_GIMBAL_VECTOR, vectorPayload(pan, tilt), nextCmdSeq())
+
+    /** 两轴矢量 PAYLOAD：越界直接夹取，不报错（流式命令的约定） */
+    private fun vectorPayload(a: Int, b: Int): ByteArray = byteArrayOf(
+        a.coerceIn(-100, 100).toByte(),
+        b.coerceIn(-100, 100).toByte()
+    )
+
+    /**
+     * 凭据命令统一入口：先按 [M.wifiCredentialPayload] 校验并组装，再走变长发送。
+     * 密码**不写进**数据库 content，避免明文落库。
+     */
+    private fun sendWifiCredential(kindType: Int, ssid: String, password: String): Byte? {
+        val payload = M.wifiCredentialPayload(ssid, password)
+        if (payload == null) {
+            onNotice?.invoke("WiFi 凭据不合法：SSID 需 1~32 字节，密码留空或 8~63 字节，总长不超过 96 字节")
+            return null
+        }
+        return sendCommandRaw(kindType, payload, "${M.cmdName(kindType)}（SSID=$ssid）")
+    }
+
+    /**
+     * 按 KIND_TYPE 组装 PAYLOAD：**唯一组装入口在 [M.cmdPayload]**，
+     * 调试页的长度校验也调 [M.cmdLenRange]，保证"校验的 LEN"和实际发出的 PAYLOAD 长度一致。
+     *
+     * - 无参数：`CMD_STOP` / `CMD_REQ_RECORD` / `CMD_REQ_INFO` / `CMD_WIFI_STATUS` → 0 字节；
      * - 运动命令（0~100 挡位）与云台/查询/音频（0~255）由 M.cmdPayload 按类型分组；
-     * - V1.10 没有"未知命令兜底 1 字节"：未登记的 TYPE 长度表里没有，[FrameCodec.encode] 会拒绝；
-     * - `CMD_SESSION_INIT` 固定发当前协议版本（正常流程由 BleManager 自动发送，这里只是兜底）。
+     * - `0xC5/0xC6` 是变长凭据命令，通用入口只给空 PAYLOAD，实际发送走 [sendWifiCredential]；
+     * - 未知 TYPE 在 [M.payloadLenRange] 里没有，[FrameCodec.encode] 会拒绝；
+     * - `CMD_SESSION_INIT` 固定发当前协议版本（正常流程由 MainViewModel 在 WiFi READY 时自动发送，这里只是兜底）。
      */
     private fun payloadOf(kindType: Int, param: Int): ByteArray = M.cmdPayload(kindType, param)
 
@@ -197,16 +320,23 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
             // 运动命令：参数是 0~100 的百分比（速度挡位 / 原地转弯幅度 / 横移速度）
             M.CMD_FORWARD, M.CMD_BACK, M.CMD_LEFT, M.CMD_RIGHT,
             M.CMD_LEFT_SHIFT, M.CMD_RIGHT_SHIFT -> "$name（$param%）"
+            // WiFi 模式：0=STA / 1=AP / 2=APSTA
+            M.CMD_WIFI_MODE -> when (param) {
+                0 -> "$name（STA 连路由器）"
+                1 -> "$name（AP 自建热点）"
+                2 -> "$name（APSTA）"
+                else -> "$name（参数 $param）"
+            }
             else -> name
         }
     }
 
     /**
-     * 二进制码源码：TYPE + PAYLOAD 的十六进制（V1.10 没有 LEN 字段）。
-     * KIND 已经编码在 TYPE 的高 2 位里，长度由 TYPE 查表决定，一串码就能还原整条命令。
+     * 二进制码源码：TYPE + LEN + PAYLOAD 的十六进制（协议 21 带 LEN）。
+     * KIND 已经编码在 TYPE 的高 2 位里，LEN 是 PAYLOAD 的字节数，一串码就能还原整条命令。
      */
     private fun frameCode(kind: Int, kindType: Int, payload: ByteArray): String {
-        val body = byteArrayOf(M.typeOf(kind, kindType)) + payload
+        val body = byteArrayOf(M.typeOf(kind, kindType), payload.size.toByte()) + payload
         return U.hex(body)
     }
 
@@ -238,23 +368,30 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     private fun handleIllegalCmdFrame(frame: Frame.Cmd) {
         val seq = frame.seq.toInt()
         onNotice?.invoke("收到方向非法的 CMD（SEQ=$seq），已拒绝执行")
-        ble.sendAckResult(seq, M.typeOf(M.KIND_CMD, frame.kindType), M.ACK_ST_ERROR.toByte())
+        // 回 ACK_ST_ERROR：走与 transport 相同的 WiFi 链路，不建记录
+        val bytes = FrameCodec.encodeFrame(
+            M.KIND_ACK,
+            M.ACK_RESULT,
+            frame.seq,
+            byteArrayOf(frame.kindType.toByte(), M.ACK_ST_ERROR.toByte())
+        )
+        if (bytes != null) rawTransport?.invoke(bytes)
     }
 
     /**
      * DAT 帧 → 填充 [carStatus]（不落库）。
      *
-     * V1.10 定长定点数（大端，0xFFFF = 无效），**只收原始量，换算全在 App**：
+     * 协议 21：帧内 LEN 定界，PAYLOAD 长度已由 [FrameCodec] 按 TYPE 允许范围校验。
+     * 定长定点数一律大端，`0xFFFF` = 无效；**只收原始量，换算全在 App**：
      * - DAT_BAT(0x80)   → PAYLOAD=[电压 u16 0.01V]（2 Byte）；电量由 [M.batteryPercentFromVoltage] 换算
      * - DAT_US(0x81)    → PAYLOAD=[距离 u16 cm]（2 Byte）
      * - DAT_WHEEL(0x82) → PAYLOAD=[左轮 int16 0.01 r/s, 右轮 int16 0.01 r/s]（4 Byte）
      *                  左右轮平均后按 v = r/s × π × 0.068 换成 m/s
      * - DAT_INFO_VERSION/POWER/STORAGE(0x83/0x84/0x85) → 静态信息，三个独立 TYPE（与固件一致）
+     * - DAT_WIFI_STATUS(0x86) → WiFi 模式/状态/IP/RSSI（8 Byte，仅查询后补发一帧）
      * - DAT_MEM(0x90)  → 内存与运行状态（16 Byte，低频）
      * - DAT_REQ(0xA0)  → 小车请求 App 发命令（请求码 + 参数），App 映射成正常 CMD 发出
-     * - 预留：0x86~0x8F 给语音 / IMU / Servo / Encoder / Current / Temp / IR / Barometer
      *
-     * 长度校验：V1.10 没有 LEN，长度在 [FrameCodec] 查表时已按 TYPE 校验，长度不符的帧根本到不了这里。
      * SEQ 去重：DAT 维护最近 64 条 SEQ 窗口，重复 SEQ（断连重发/重传）直接丢弃。
      */
     private fun handleDatFrame(frame: Frame.Dat) {
@@ -263,11 +400,21 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
 
         val payload = frame.payload
 
-        // ---- V1.10：静态信息 / 内存状态 / 小车请求，不改变 carStatus 的公共分支 ----
+        // ---- 静态信息 / 内存状态 / 小车请求 / WiFi 状态，不改变 carStatus 的公共分支 ----
         when (frame.kindType) {
             M.DAT_INFO_VERSION, M.DAT_INFO_POWER, M.DAT_INFO_STORAGE -> {
                 if (!datSeqWindow.accept(frame.seq.toInt())) return
                 parseDeviceInfo(frame.kindType, payload)
+                return
+            }
+            M.DAT_WIFI_STATUS -> {
+                if (!datSeqWindow.accept(frame.seq.toInt())) return
+                _carStatus.value = parseWifiStatus(payload, _carStatus.value)
+                return
+            }
+            M.DAT_INIT_STATE -> {
+                if (!datSeqWindow.accept(frame.seq.toInt())) return
+                _carStatus.value = parseInitState(payload, _carStatus.value)
                 return
             }
             M.DAT_MEM -> {
@@ -394,6 +541,56 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * DAT_WIFI_STATUS（8 Byte）：`[mode 1B][state 1B][ipv4 4B][rssi 2B 大端]`。
+     *
+     * - mode：0=STA / 1=AP / 2=APSTA；
+     * - state：0=未连路由器 / 1=已连无外网 / 2=有外网；
+     * - ipv4：当前出口地址（AP 为 192.168.4.1），全 0 视为未分配；
+     * - rssi：int16 大端 dBm，`0xFFFF` = 未连路由器（无效）。
+     */
+    private fun parseWifiStatus(p: ByteArray, current: CarStatus): CarStatus {
+        val ipBytes = U.slice(p, 2, 4)
+        val ip = if (ipBytes.size == 4 && ipBytes.any { it.toInt() != 0 }) {
+            ipBytes.joinToString(".") { (it.toInt() and 0xFF).toString() }
+        } else {
+            null
+        }
+        val rssiRaw = U.u16be(p, 6)
+        return current.copy(
+            wifiMode = U.u8(p, 0),
+            wifiState = U.u8(p, 1),
+            wifiIp = ip,
+            wifiRssi = if (rssiRaw == M.DAT_INVALID_U16) null else U.i16be(p, 6)
+        )
+    }
+
+    /**
+     * DAT_INIT_STATE（9 Byte）：`[stage][wifiMode][wifiState][peerStage][flags][ipv4 4B]`。
+     *
+     * 只有 `ipv4` 是 App 直接要用的：它是**主板**出口地址，WiFi 命令通道往这里发。
+     * `wifiState` 与 0x86 同口径，顺手一起更新，避免两帧不同步时提示抖动。
+     */
+    private fun parseInitState(p: ByteArray, current: CarStatus): CarStatus {
+        val ipBytes = U.slice(p, 5, 4)
+        val ip = if (ipBytes.size == 4 && ipBytes.any { it.toInt() != 0 }) {
+            ipBytes.joinToString(".") { (it.toInt() and 0xFF).toString() }
+        } else {
+            null
+        }
+        return current.copy(
+            initStage = U.u8(p, 0),
+            wifiMode = U.u8(p, 1),
+            wifiState = U.u8(p, 2),
+            boardIp = ip
+        )
+    }
+
+    /** 把外部通道（WiFi/UDP）收到的字节交给同一套解析器，保证两条通道解析一致 */
+    fun onExternalFrame(frame: Frame) {
+        handleFrame(frame)
+    }
+
+    /**
      * DAT_REQ：小车请求 App 发一条命令。
      *
      * 命令始终由 App 单点发出：请求码 → CMD KIND_TYPE（[M.requestCmdKind]）→ 正常 [sendCommand]
@@ -446,9 +643,17 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
 
-        // ---- ② 错误应答：ACK_ERROR（固件已定义、当前不发，保留解析能力） ----
+        // ---- ② 错误应答：ACK_ERROR，PAYLOAD=[被应答 CMD 的完整 TYPE, 错误码] ----
         if (frame.kindType == M.ACK_ERROR) {
-            onNotice?.invoke("收到错误应答：错误码 ${U.u8(frame.payload, 0)}（SEQ=$seq）")
+            val cmdType = U.u8(frame.payload, 0)
+            val errorCode = U.u8(frame.payload, 1)
+            _ackEvents.value = AckEvent(
+                seq = seq,
+                kindType = M.kindTypeOf(cmdType.toByte()),
+                status = M.ACK_ST_ERROR,
+                statusText = "错误码 $errorCode"
+            )
+            onNotice?.invoke("收到错误应答：CMD 0x${"%02X".format(cmdType)}，错误码 $errorCode（SEQ=$seq）")
             return
         }
 
@@ -475,17 +680,24 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
         // 命中队列说明这条命令还在等回复；真正要改的记录按 SEQ 查库（最新一条未回复的手机发出命令）
         removePending(seq)
 
+        // 把结果原样抛给上层（配网流程靠它给出「成功 / 失败原因」）
+        _ackEvents.value = AckEvent(seq, kindType, status, statusText)
+
         viewModelScope.launch(Dispatchers.IO) {
-            val id = commandRepository.findUnansweredBySeq(seq)?.id ?: return@launch
+            // 「未终结（待回复或只回了受理）+ 同 SEQ」才回填：ACK 0 → ACK 3 两段回执能落在
+            // 同一条记录上；SEQ 只有 1~255 会回绕，已终结（3/4/5/6/超时）的历史记录不参与匹配，
+            // 不会被下一轮循环的回执改写。
+            val id = commandRepository.findOpenBySeq(seq)?.id ?: return@launch
             commandRepository.updateReply(id, replyText, System.currentTimeMillis())
         }
     }
 
     /**
-     * LOG 帧：小车推来的日志 → 逐条（每帧固定 8 条）翻译后入库。
+     * LOG 帧：小车推来的日志 → 逐条翻译后入库。
      *
-     * - 每条记录 = TYPE(1B) + 参数(1B)；TYPE 的 bit5-4 是等级（00=D/01=E/10=W），bit3-0 是模块编号；
-     * - 空槽（TYPE=0x00 且参数=0x00）直接跳过；
+     * - 容器 TYPE 固定 `0x42`，记录区为若干条 `[记录TYPE 1B][记录LEN 1B][数据]`；
+     *   条数可变（最多 8 条），**没有空槽**，[FrameCodec] 已循环解析到底；
+     * - 记录 TYPE bit5-4 是等级（`0x4x=D` / `0x5x=E` / `0x6x=W` / `0x7x=I`），低 4 bit 是模块编号；
      * - 码表在 [M.logRecordText]：码表里没有的码显示 `UNKNOWN(模块/参数)` 并保留原始字节，不丢、不崩。
      *
      * SEQ 去重：LOG 维护最近 64 条 SEQ 窗口，重复 SEQ（断连补推/重传）直接丢弃，避免重复记录。
@@ -495,11 +707,11 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
     private fun handleLogFrame(frame: Frame.Log) {
         if (!logSeqWindow.accept(frame.seq.toInt())) return
 
-        // 先在内存里拼好 8 条，再一次性入库，避免一帧触发 8 次数据库事务
+        // 先在内存里拼好本帧所有记录，再一次性入库，避免一帧触发多次数据库事务
         val entries = frame.records.mapNotNull { record ->
             val content = M.logRecordText(record.type, record.param)
             if (content.isBlank()) return@mapNotNull null
-            val level = M.logLevelOfZone(M.zoneOf(M.kindTypeOf(record.type)))
+            val level = M.logLevelOfType(record.type.toInt() and 0xFF)
             U.makeLog(content, level)
         }
         if (entries.isEmpty()) return
@@ -557,6 +769,12 @@ class BleDataViewModel(app: Application) : AndroidViewModel(app) {
             if (!stillWaiting) return@launch
             pendingCmds.removeAll { it.seq == entry.seq && it.sendTime == entry.sendTime }
             publishPending()
+            _ackEvents.value = AckEvent(
+                seq = entry.seq,
+                kindType = entry.kindType,
+                status = M.ACK_ST_TIMEOUT,
+                statusText = "超时无应答"
+            )
             withContext(Dispatchers.IO) {
                 val id = commandRepository.findUnansweredBySeq(entry.seq)?.id ?: return@withContext
                 commandRepository.updateReply(id, "超时无应答", System.currentTimeMillis())

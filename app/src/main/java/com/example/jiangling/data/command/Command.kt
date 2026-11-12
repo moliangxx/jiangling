@@ -10,7 +10,7 @@ import com.example.jiangling.util.M
  * 【字段说明】
  *  - seq       序列号（协议帧里的 SEQ；CMD_SESSION_INIT 固定为 0）
  *  - role      发起对象，相对手机而言："发送" = 手机发出，"接收" = 手机收到
- *  - kindType  KIND_TYPE（TYPE 的低 6 bit = 分区 + 类型），用来对应"蓝牙表"
+ *  - kindType  KIND_TYPE（TYPE 的低 6 bit = 分区 + 类型），用来对应"命令表"
  *  - content   二进制解码后的中文含义（M.cmdName()），不是原始字节
  *  - code      二进制码源码：TYPE + PAYLOAD 的十六进制（V1.10 没有 LEN 字段），
  *              例如 "D1 64"（KIND / 分区 / 类型都已经编码在 TYPE 里，长度查表决定）

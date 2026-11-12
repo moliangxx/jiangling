@@ -1,6 +1,7 @@
 package com.example.jiangling.main.cmd
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -50,11 +52,8 @@ import com.example.jiangling.util.U
  *
  *  【页面结构（和日志页保持一致的操作习惯）】
  *  ┌──────────────────────────────────────────────────────────────┐
- *  │  命令记录                         ← 大标题                    │
- *  │  共 N 条 · 范围：本次启动之后      ← 副标题                    │
- *  │                                                              │
- *  │  [降序 ↓] [全部] [有回复] [没有]   ← 第一行：排序 + 回复筛选    │
- *  │  [时间：本次启动之后 ▾]            [清空当前]    ← 第二行      │
+ *  │  [降序 ↓] [全部] [有回复] [没有] [时间：当前 ▾] [清空当前]     │
+ *  │      ← 全部操作排在同一行（窄屏横向滚动，不换行）              │
  *  ├──────────────────────────────────────────────────────────────┤
  *  │  命令列表（LazyColumn，每条一张卡片）                          │
  *  └──────────────────────────────────────────────────────────────┘
@@ -86,7 +85,7 @@ import com.example.jiangling.util.U
  *  【关键点：默认时间与日志页共用】
  *  默认时间起点是 ViewModel 的 firstConnectTime：
  *  - 初始化时 = App 启动时刻；
- *  - 蓝牙首次主动连接成功时改成连接那一刻（只改一次）；
+ *  - WiFi 首次连接成功时改成连接那一刻（只改一次）；
  *  - 所以命令页和日志页永远显示同一个默认时间范围。
  * ======================================================================
  */
@@ -126,19 +125,12 @@ fun CommandCompose(viewModel: MainViewModel, onBack: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
 
-        // ==================== 标题区 ====================
-        // 页面标题只由顶部共享 TopBar 显示，这里只保留条数/范围副标题
-        Text(
-            text = "共 ${commands.size} 条 · 范围：$label",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(Modifier.height(6.dp))
-
-        // ==================== 第一行操作：排序 + 回复筛选 ====================
+        // ==================== 操作行：排序 + 回复筛选 + 时间 + 清空 ====================
+        // 全部控件排在同一行；宽度不够时整行横向滚动，不换行、不重叠
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // ① 排序按钮
@@ -156,22 +148,13 @@ fun CommandCompose(viewModel: MainViewModel, onBack: () -> Unit) {
                     onClick = { replyFilter = item }
                 )
             }
-        }
 
-        // ==================== 第二行操作：时间 + 清空 ====================
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
             // ③ 时间按钮：按钮上的文字就是当前范围，点开共用日志页的日期弹窗
             ToolbarTextButton(
                 text = "时间：$label ▾",
                 highlighted = true,
                 onClick = { showDateDialog = true }
             )
-
-            // 弹簧：把两个清空按钮推到最右
-            Spacer(Modifier.weight(1f))
 
             // ④ 清空当前：只删当前列表（区间由本页面的 range 传参）
             ToolbarTextButton(
@@ -334,7 +317,13 @@ private fun CommandItem(command: Command) {
                     Text(
                         text = "回复｜${command.reply}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF2E7D32)
+                        // 按语义上色：0/3 绿、1/2 中性、4/5/6/超时红，
+                        // 不能把「无法识别」「错误异常」也画成成功色
+                        color = when (M.ackLevelOfText(command.reply)) {
+                            0 -> Color(0xFF2E7D32)
+                            1 -> MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> Color(0xFFC62828)
+                        }
                     )
                     // replyTime 可能为 null，用 ?.let 安全处理
                     command.replyTime?.let { replyTime ->

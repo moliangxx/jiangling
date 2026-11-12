@@ -1,11 +1,10 @@
 package com.example.jiangling.main
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,12 +38,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.jiangling.ble.ConnectionState
 import com.example.jiangling.data.MainViewModel
 import com.example.jiangling.main.cmd.CommandCompose
+import com.example.jiangling.main.cmdview.CommandReferenceCompose
+import com.example.jiangling.main.control.ControlCompose
 import com.example.jiangling.main.debug.DetailCompose
 import com.example.jiangling.main.debug.LogCompose
 
@@ -57,7 +58,7 @@ import com.example.jiangling.main.debug.LogCompose
  *  │  TopBar（**全 App 唯一共用**，所有页面都挂它）                        │
  *  │                                                                     │
  *  │  一级页面（Home / Debug）:                                          │
- *  │    左 [切换按钮] 26dp [灵渊 + 连接状态小字]   ← 尾部占位             │
+ *  │    左 [切换按钮] 26dp [江灵 + 连接状态小字]   ← 尾部占位             │
  *  │                                                                     │
  *  │  二级页面（Detail / Log / Command）:                                │
  *  │    左 [← 返回箭头] 26dp [页面标题 + 连接状态小字]   ← 尾部占位       │
@@ -125,12 +126,14 @@ import com.example.jiangling.main.debug.LogCompose
 private enum class Route {
     // ========== 一级页面（共享同一 TopBar 的切换按钮）==========
     HOME,       // 控制页：方向键盘 + 摄像头 + 状态卡
-    DEBUG,      // 调试页：蓝牙扫描 + 命令发送 + 三个入口
+    DEBUG,      // 调试页：配网 + 命令发送 + 入口列表
 
-    // ========== 二级页面（从 Debug 进入，TopBar 切换按钮变返回箭头）==========
-    DETAIL,     // 详细数据：电量、速度、运行状态
-    LOGS,       // 运行日志：蓝牙收发日志
-    COMMANDS    // 命令记录：发送的命令 + ACK 回复
+    // ========== 二级页面（从首页 / 调试页进入，TopBar 切换按钮变返回箭头）==========
+    DETAIL,     // 详细页：电量、速度、运行状态
+    CONTROL,    // 详细操控：横屏专页，视频占位 + 轮盘/云台（无 TopBar）
+    LOGS,       // 运行日志：板子推送的日志
+    COMMANDS,   // 命令记录：发送的命令 + ACK 回复
+    CMD_VIEW    // 命令查看：协议命令速查（静态表）
 }
 
 /**
@@ -139,17 +142,21 @@ private enum class Route {
  * 新加的二级页面（比如 SETTINGS）记得加到这里。
  */
 private fun Route.isSecondary(): Boolean =
-    this == Route.DETAIL || this == Route.LOGS || this == Route.COMMANDS
+    this == Route.DETAIL || this == Route.CONTROL || this == Route.LOGS ||
+        this == Route.COMMANDS || this == Route.CMD_VIEW
 
 /**
  * 页面显示的标题文字。
- * 一级页面（首页 / 调试页）固定显示"灵渊"，二级页面显示各自标题。
+ * 一级页面（首页 / 调试页）固定显示"江灵"，二级页面显示各自标题。
+ * CONTROL 是无 TopBar 的横屏页，标题只用于保持 when 分支完整。
  */
 private fun Route.displayTitle(): String = when (this) {
-    Route.HOME, Route.DEBUG -> "灵渊"
+    Route.HOME, Route.DEBUG -> "江灵"
     Route.DETAIL -> "详细数据"
+    Route.CONTROL -> "详细操控"
     Route.LOGS -> "运行日志"
     Route.COMMANDS -> "命令记录"
+    Route.CMD_VIEW -> "命令查看"
 }
 
 // ==================== 主入口 Composable ====================
@@ -168,57 +175,86 @@ fun JiangLingApp(viewModel: MainViewModel) {
     // rememberSaveable：旋转屏幕 / 进程被系统杀死后重新创建时，能从 Bundle 里恢复这个值。
     var route by rememberSaveable { mutableStateOf(Route.HOME) }
 
-    // 连接三态直接读 MainViewModel，不另造一套状态
-    val connectionState by viewModel.connectionState.collectAsState()
+    // 通道两态直接读 MainViewModel，不另造一套状态
+    val channel by viewModel.commandChannel.collectAsState()
+
+    // ======== 屏幕方向：只有详细操控页横屏，其余页面一律竖屏 ========
+    // 用 LaunchedEffect(route) 而不是 DisposableEffect：
+    // 屏幕方向切换会重建 Activity，若在 onDispose 里回写方向容易和重建互相触发；
+    // 按"当前路由"这个唯一状态来设，重建后恢复路由再设一次即可收敛。
+    val activity = LocalContext.current.findActivity()
+    LaunchedEffect(route) {
+        activity?.requestedOrientation =
+            if (route == Route.CONTROL) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
 
     // ======== 系统返回键拦截 ========
-    // 只拦截二级页面的返回键——二级页面按返回键回到 DEBUG；
+    // 二级页面按返回键：详细操控页回首页，其余（详细数据/日志/命令）回调试页；
     // 一级页面（HOME / DEBUG）按返回键交给系统处理（退出 App）。
     BackHandler(enabled = route.isSecondary()) {
-        route = Route.DEBUG
+        route = if (route == Route.CONTROL) Route.HOME else Route.DEBUG
     }
 
     // ======== 整块布局 ========
-    // safeDrawingPadding() 避开顶部状态栏和底部系统导航栏。
+    // 普通页面用 safeDrawingPadding() 避开顶部状态栏和底部系统导航栏；
+    // 详细操控页要整屏铺视频，**不吃**这个留白（视频画到系统栏/挖孔下面，
+    // 控件自己在页面内避让），否则横屏会出现上下左右的空边。
     Column(
         modifier = Modifier
             .fillMaxSize()       // 占满整个屏幕
-            .safeDrawingPadding()
+            .then(
+                if (route == Route.CONTROL) Modifier
+                else Modifier.safeDrawingPadding()
+            )
     ) {
 
         // ======== 1. 共享标题栏（所有页面共用，含连接状态小字） ========
-        SharedTopBar(
-            currentRoute = route,
-            connectionState = connectionState,
-            onToggle = {
-                // 一级页面：Home ↔ Debug 快速切换（唯一入口）
-                route = if (route == Route.HOME) Route.DEBUG else Route.HOME
-            },
-            onBack = {
-                // 二级页面：一律回到 Debug
-                route = Route.DEBUG
-            }
-        )
+        // 详细操控页是横屏全屏页，不显示 TopBar（返回键在页面内右上角）
+        if (route != Route.CONTROL) {
+            SharedTopBar(
+                currentRoute = route,
+                channel = channel,
+                onToggle = {
+                    // 一级页面：Home ↔ Debug 快速切换（唯一入口）
+                    route = if (route == Route.HOME) Route.DEBUG else Route.HOME
+                },
+                onBack = {
+                    // 二级页面：详细操控页回首页，其余一律回调试页
+                    route = if (route == Route.CONTROL) Route.HOME else Route.DEBUG
+                }
+            )
+        }
 
         // ======== 2. 页面内容区 ========
         // Box + weight(1f)：占满标题栏下面的所有剩余空间。
+        // CONTROL 页没有 TopBar，所以 weight(1f) 等于整屏高度
         Box(modifier = Modifier.weight(1f)) {
 
             // 根据 route 决定显示哪个 Screen
             when (route) {
 
                 // ---- 一级页面 ----
-                Route.HOME -> HomeScreen(viewModel = viewModel)
+                Route.HOME -> HomeScreen(
+                    viewModel = viewModel,
+                    onOpenDetail = { route = Route.CONTROL }
+                )
 
                 Route.DEBUG -> DebugScreen(
                     viewModel = viewModel,
                     onOpenDetail   = { route = Route.DETAIL },
                     onOpenLogs     = { route = Route.LOGS },
-                    onOpenCommands = { route = Route.COMMANDS }
+                    onOpenCommands = { route = Route.COMMANDS },
+                    onOpenCmdView  = { route = Route.CMD_VIEW }
                 )
 
                 // ---- 二级页面 ----
                 Route.DETAIL -> DetailCompose(viewModel = viewModel)
+
+                Route.CONTROL -> ControlCompose(
+                    viewModel = viewModel,
+                    onBack = { route = Route.HOME }
+                )
 
                 Route.LOGS -> LogCompose(
                     viewModel = viewModel,
@@ -229,6 +265,8 @@ fun JiangLingApp(viewModel: MainViewModel) {
                     viewModel = viewModel,
                     onBack = { route = Route.DEBUG }
                 )
+
+                Route.CMD_VIEW -> CommandReferenceCompose()
             }
         }
     }
@@ -238,33 +276,38 @@ fun JiangLingApp(viewModel: MainViewModel) {
 //  共享标题栏
 // ======================================================================
 
+/** 从 Compose 的 LocalContext 里向上找到宿主 Activity（设置屏幕方向用） */
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 /**
  * 所有页面共用的标题栏（**全 App 只有这一个 TopBar，各页不再各写一套**）。
  *
- * 【一级页面（首页 / 调试页）】从左到右：
+ * 【所有页面统一形态】标题绝对居中：
  *  ```
- *  [切换按钮] 26dp  灵渊
- *                  ● 未连接        ← 尾部 weight(1f) 吃掉剩余宽度
- *  ```
- *
- * 【二级页面（详细数据 / 运行日志 / 命令记录）】：
- *  ```
- *  [← 返回]   26dp  详细数据
- *                  ● 已连接        ← 与一级页使用相同的 26dp 间距
+ *  [切换按钮 / ← 返回]        江灵           （右侧留空）
+ *                          ● 未连接
  *  ```
  *
- * 标题下方那行小字是蓝牙连接三态，直接读 [ConnectionState]，不另起状态。
- * 未连接灰、已连接绿、重连中黄；重连中的圆点有轻微呼吸，不闪烁。
+ * 标题与下方连接状态都用 `Box + align(Center)` 定位，只由父容器宽度决定中轴，
+ * 左侧按钮用 `align(CenterStart)` 叠加，**不参与标题的水平定位**——
+ * 因此按钮宽度、文字长短都不会把标题推偏。
+ *
+ * 标题下方那行小字是命令通道两态（WiFi 已连接 / 未连接），直接读
+ * [MainViewModel.CommandChannel]，不另起状态。未连接灰、WiFi 已连接绿。
  *
  * @param currentRoute 当前页面（决定一级/二级形态与标题）
- * @param connectionState MainViewModel 暴露的真实连接三态
+ * @param channel MainViewModel 暴露的命令通道
  * @param onToggle 一级页点切换按钮（首页 ↔ 调试页）
  * @param onBack 二级页点返回箭头
  */
 @Composable
 private fun SharedTopBar(
     currentRoute: Route,
-    connectionState: ConnectionState,
+    channel: MainViewModel.CommandChannel,
     onToggle: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -273,18 +316,18 @@ private fun SharedTopBar(
         tonalElevation = 2.dp,
         shadowElevation = 1.dp
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)                  // 需要容纳标题 + 状态两行
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .height(64.dp)
+                .padding(horizontal = 8.dp)
         ) {
-
-            // ======== 左侧 ========
+            // ======== 左侧：一级页切换按钮 / 二级页返回键（叠加，不参与居中） ========
             if (currentRoute.isSecondary()) {
-                // 二级页面：最左边只放返回键
-                IconButton(onClick = onBack) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "返回",
@@ -292,32 +335,27 @@ private fun SharedTopBar(
                     )
                 }
             } else {
-                // 一级页面：最左边只有一个切换按钮（文字 + 图标）
-                // 文字显示"要去的页面"，点击在首页 ↔ 调试页之间切换
                 TopBarEntry(
                     icon = Icons.Default.SwapHoriz,
                     text = if (currentRoute == Route.HOME) "调试" else "首页",
-                    onClick = onToggle
+                    onClick = onToggle,
+                    modifier = Modifier.align(Alignment.CenterStart)
                 )
             }
 
-            // ======== 标题 + 状态：与左侧控件保持统一间距 ========
-            // 固定 26dp，一级页（切换按钮）与二级页（返回键）一致；
-            // 尾部 weight(1f) 仍负责吃掉剩余宽度，标题不会被推到屏幕最右
-            Spacer(Modifier.width(26.dp))
-
-            Column(horizontalAlignment = Alignment.Start) {
+            // ======== 中间：标题 + 连接状态，绝对居中 ========
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
                     text = currentRoute.displayTitle(),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
-                ConnectionStatusText(connectionState)
+                ConnectionStatusText(channel)
             }
-
-            // 尾部占位：吃掉剩余宽度，让标题区保持靠左
-            Spacer(Modifier.weight(1f))
         }
     }
 }
@@ -327,10 +365,11 @@ private fun SharedTopBar(
 private fun TopBarEntry(
     icon: ImageVector,
     text: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 6.dp),
@@ -353,34 +392,17 @@ private fun TopBarEntry(
 }
 
 /**
- * 标题下方的连接状态小字（一行，无点击）。
+ * 标题下方的通道状态小字（一行，无点击）。
  *
- * 三态配色：未连接灰、已连接绿、重连中黄；重连中圆点轻微呼吸（alpha 0.45~1.0）。
+ * 两态配色：未连接灰、WiFi 已连接绿。
  *
- * @param state 只读 [MainViewModel.connectionState] 的当前值
+ * @param channel 只读 [MainViewModel.commandChannel] 的当前值
  */
 @Composable
-private fun ConnectionStatusText(state: ConnectionState) {
-    val color = when (state) {
-        ConnectionState.DISCONNECTED -> Color(0xFF9E9E9E)   // 灰
-        ConnectionState.CONNECTED -> Color(0xFF43A047)      // 绿
-        ConnectionState.RECONNECTING -> Color(0xFFF9A825)   // 黄
-    }
-
-    val dotAlpha = if (state == ConnectionState.RECONNECTING) {
-        val transition = rememberInfiniteTransition(label = "reconnect")
-        val alpha by transition.animateFloat(
-            initialValue = 0.45f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1200),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "reconnectAlpha"
-        )
-        alpha
-    } else {
-        1f
+private fun ConnectionStatusText(channel: MainViewModel.CommandChannel) {
+    val color = when (channel) {
+        MainViewModel.CommandChannel.NONE -> Color(0xFF9E9E9E)   // 灰
+        MainViewModel.CommandChannel.WIFI -> Color(0xFF43A047)   // 绿
     }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -388,11 +410,10 @@ private fun ConnectionStatusText(state: ConnectionState) {
             text = "●",
             style = MaterialTheme.typography.labelSmall,
             color = color,
-            modifier = Modifier.alpha(dotAlpha)
         )
         Spacer(Modifier.width(4.dp))
         Text(
-            text = state.label,
+            text = channel.label,
             style = MaterialTheme.typography.labelSmall,
             color = color
         )

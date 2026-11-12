@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 /**
  * 命令速查表的一条记录。
  *
- * 数据来源：`BLE通信协议/江灵通信协议/命令.md`，并只保留 App 侧已登记/已处理的命令。
+ * 数据来源：`index/江灵通信协议/命令.md`，并只保留 App 侧已登记/已处理的命令。
  * TYPE 用十六进制，DEC 列用十进制。
  */
 private data class CommandInfo(

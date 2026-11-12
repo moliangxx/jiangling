@@ -3,7 +3,7 @@ package com.example.jiangling.data.log
 import kotlinx.coroutines.flow.Flow
 
 /**
- * 日志仓库——日志只有一个来源：小车通过蓝牙推过来。
+ * 日志仓库——日志只有一个来源：小车通过 WiFi 回程（TCP 8080）推过来。
  * App 端只做三件事：存下来（add）、按区间查（between）、按区间删（deleteBetween）。
  */
 class LogRepository(private val dao: LogDao) {

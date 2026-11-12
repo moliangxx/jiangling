@@ -13,3 +13,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# 协议正文唯一来源：d:\Esp32Project\index\江灵通信协议\（五份分册）
+# 本工程不再保留任何协议副本，需要时直接去 index 查
+/BLE通信协议/
+BLE通信协议/
+江灵通信协议.md
+江灵通信协议-单文件版.md

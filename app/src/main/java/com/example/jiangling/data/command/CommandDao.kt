@@ -45,6 +45,21 @@ interface CommandDao {
     )
     suspend fun findUnansweredBySeq(seq: Int, role: String): Command?
 
+    /**
+     * 按 SEQ 找「还没终结」的手机发出命令：待回复（`''`）或只回了受理（`ACK 0`）。
+     *
+     * 为什么要单独这一条：`0xC8` 这类命令先回 `ACK 0`（受理）再回 `ACK 3`（完成），
+     * 第二次回执必须还能命中同一条记录，否则永远停在「收到」。
+     *
+     * 为什么不直接按 SEQ 取最新一条：SEQ 只有 1~255，会回绕。终结过的记录
+     * （已执行 / 无法识别 / 错误 / 超时）一律不参与匹配，避免把上一轮循环的历史记录盖掉。
+     */
+    @Query(
+        "SELECT * FROM command WHERE seq = :seq AND role = :role " +
+            "AND (reply = '' OR reply = :accepted) ORDER BY id DESC LIMIT 1"
+    )
+    suspend fun findOpenBySeq(seq: Int, role: String, accepted: String): Command?
+
     @Query("UPDATE command SET reply = :reply, replyTime = :replyTime WHERE id = :id")
     suspend fun updateReply(id: Long, reply: String, replyTime: Long)
 }

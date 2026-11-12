@@ -1,13 +1,18 @@
 package com.example.jiangling.main
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,348 +20,434 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatteryFull
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import com.example.jiangling.data.CarStatus
 import com.example.jiangling.data.MainViewModel
+import com.example.jiangling.main.control.GearBallPicker
+import com.example.jiangling.main.control.GimbalJoystick
+import com.example.jiangling.main.control.JoystickDrive
+import com.example.jiangling.main.control.ThrottledSender
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.example.jiangling.main.control.VoiceCircleButton
+import com.example.jiangling.main.control.rememberThrottledSender
 import com.example.jiangling.util.M
 import com.example.jiangling.util.U
+import com.example.jiangling.voice.VoiceState
+import kotlin.math.roundToInt
 
 /*
  * ======================================================================
- *  控制页（HomeScreen）——整个 App 的首页
+ *  首页（HomeScreen）——竖屏，自上而下：状态行 / 摄像头 / 速度·语音 / 双轮盘
  * ======================================================================
  *
- *  布局结构（从上到下）：
- *  ┌─────────────────────────────────────────────┐
- *  │  摄像头占位（16:9 黑块）                     │
- *  ├─────────────────────────────────────────────┤
- *  │  状态卡片：连接 | 设备 | 电量 | 速度         │
- *  ├─────────────────────────────────────────────┤
- *  │  方向键盘（十字键）                           │
- *  │          ▲                                  │
- *  │     ◀    ■    ▶                             │
- *  │          ▼                                  │
- *  ├─────────────────────────────────────────────┤
- *  │  底部说明小字                                 │
- *  └─────────────────────────────────────────────┘
- *  （连接/断开统一由标题栏右侧的状态 + 调试页的单个按钮负责）
+ *  ┌───────────────────────────────────────────────┐
+ *  │ 状态行（圆角矩形底，左右各 18dp）                │
+ *  ├───────────────────────────────────────────────┤ ← 18dp 边距
+ *  │  摄像头 200dp 高（左右各 18dp）          [入口] │
+ *  │  (速度 44)                          (语音 44)  │ ← 浮层：画面左下 / 右下角
+ *  ├───────────────────────────────────────────────┤
+ *  │  ┌────────┐            ┌────────┐              │
+ *  │  │ 方向轮盘 │            │ 云台轮盘 │              │ ← 120dp，同尺寸
+ *  │  └────────┘            └────────┘              │
+ *  └───────────────────────────────────────────────┘
  *
- *  【Compose 关键概念，这里用到的】
+ *  - 速度按钮在摄像头左下角，点击**向右**弹挡位（弹层只占右侧，不挡轮盘）；
+ *  - 语音按钮在摄像头右下角；
+ *  - 两个轮盘下发复用详细操控页同一套链路（sendMoveVector / sendGimbalVector +
+ *    200ms 节拍 + 松手补 0xE0 + 切后台停车），没有第二套发送逻辑。
  *
- *  1) collectAsState() 把 Flow 变成可观察的 state
- *     val status by viewModel.status.collectAsState()
- *     status 变了 → Compose 自动重组这个函数 → 界面刷新
- *
- *  2) Column / Row / Box 三种布局容器
- *     Column = 从上到下排    Row = 从左到右排    Box = 叠放
- *
- *  3) weight(1f) = 占满剩余空间
- *     Row { 左侧内容; Box(Modifier.weight(1f)) { 中间空白 }; 右侧内容 }
- *     → 中间的 Box 会吃掉左右两侧之外的所有宽度
- *
- *  4) Spacer = 占位空隙
- *     Spacer(Modifier.height(12.dp))  → 留 12dp 的竖直空隙
- *     Spacer(Modifier.width(8.dp))   → 留 8dp 的水平空隙
- *     比 padding 更安全——不会意外把别的控件也挤开
- *
- *  5) Modifier.clip() + .background() + .pointerInput()
- *     组合效果 = 圆角可点击按钮：
- *     Modifier
- *       .clip(RoundedCornerShape(12.dp))   // 先裁剪圆角
- *       .background(Color.Red)             // 再画背景（被圆角裁掉）
- *       .pointerInput { detectTapGestures { onClick() } }  // 最后加点击
- *     ✘ 顺序反了就不生效！clip 必须在 background 之前
- *
- *  6) detectTapGestures { onPress = { ...; tryAwaitRelease(); ... } }
- *     长按/按住手势：按下执行第一段，松手执行第二段。
- *     这里用来做方向键——按住前进、松手自动 STOP。
- *     tryAwaitRelease() 是挂起函数，会一直等手指抬起
- *
- *  7) Card / Surface / Box 的区别
- *     Box = 最基础的容器，不带背景/阴影
- *     Surface = 带背景色 + 阴影 + Material 点击波纹
- *     Card = Surface + 默认圆角 + 内边距（Material3 风格卡片）
- *     ✘ 不要嵌套太多层 Card/Surface，会出现叠加阴影很难看
- *
- *  8) LaunchedEffect(message) { ... }
- *     某个 state 变化时执行一段协程代码。
- *     这里用来弹 Toast——每当 viewModel.message 有新值就弹一次，
- *     然后调 consumeMessage() 把它清空，避免下次重组又弹一遍。
+ *  标题栏在 MainCompose 的 SharedTopBar（显示「江灵」）。
  * ======================================================================
  */
+
+/** 页面左右内容边距：摄像头、状态行、按钮行、轮盘行都用它，保证左右对齐 */
+private val HOME_MARGIN = 18.dp
+
+/** 摄像头区固定高度 */
+private val HOME_CAMERA_HEIGHT = 200.dp
+
+/** 状态行高度 */
+private val HOME_STATUS_HEIGHT = 48.dp
+
+/** 垂直间距（状态行 / 摄像头 / 按钮行之间） */
+private val HOME_GAP = 10.dp
+
+/** 首页速度 / 语音按钮直径 */
+private val HOME_SPEED_SIZE = 44.dp
+private val HOME_VOICE_SIZE = 44.dp
+
+/** 首页两个轮盘直径（方向 / 云台同尺寸） */
+private val HOME_WHEEL_SIZE = 120.dp
+
+/** 状态行里"信号差"的红线 */
+private const val SIGNAL_POOR_THRESHOLD = 30
 
 /**
- * 控制页根 Composable。
+ * 首页根 Composable。
  *
- * @param viewModel 全局唯一的 ViewModel，所有数据都从这里读
+ * @param onOpenDetail 进详细操控页（摄像头整块 + 右上角圆钮共用这一个回调）
  */
 @Composable
-fun HomeScreen(viewModel: MainViewModel) {
+fun HomeScreen(viewModel: MainViewModel, onOpenDetail: () -> Unit) {
 
-    // ======== 读取状态 ========
-    // by 关键字：自动把 StateFlow<CarStatus> 解包成 CarStatus
     val status by viewModel.status.collectAsState()
     val message by viewModel.message.collectAsState()
+    val voiceState by viewModel.voiceState.collectAsState()
+    val voiceOn = voiceState is VoiceState.On
 
-    // ======== Toast 弹出 ========
-    // ⚠ LocalContext.current 是 Composable 调用，必须在外层捕获，不能放在 LaunchedEffect 里！
     val context = LocalContext.current
     LaunchedEffect(message) {
         message?.let {
-            U.t(context, it)                     // 弹 Toast
-            viewModel.consumeMessage()            // 清掉，避免重复弹
+            U.t(context, it)
+            viewModel.consumeMessage()
         }
     }
 
-    // ======== 主布局：Column 从上到下排 ========
-    Column(
-        modifier = Modifier
-            .fillMaxSize()                       // 占满父容器（标题栏下面的全部空间）
-            .padding(16.dp),                     // 四周各留 16dp 边距
-        verticalArrangement = Arrangement.spacedBy(12.dp)  // 子元素之间统一留 12dp
-    ) {
-
-        // ==================== 1. 摄像头占位 ====================
-        CameraPanel()
-
-        // ==================== 2. 状态卡片 ====================
-        // weight(0f)：固定高度，不参与剩余空间分配
-        StatusCard(
-            connected = status.connected,
-            deviceName = status.deviceName,
-            battery = status.battery,
-            speed = status.speed
-        )
-
-        // ==================== 3. 方向键盘 ====================
-        // weight(1f)：吃掉标题栏、摄像头、状态卡、底部按钮之外的所有空间
-        // 这样键盘会自动居中，不会被挤出屏幕
-        Box(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            DirectionPad(viewModel)
-        }
-
-        // ==================== 4. 底部说明 ====================
-        Text(
-            text = "当前为蓝牙调试模式，方向指令只发送给小车",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    // 录音权限：点语音开关时才弹系统框
+    val voicePermission = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) viewModel.startVoice() else viewModel.reportVoicePermissionDenied()
     }
-}
 
-// ======================================================================
-//  子 Composable
-// ======================================================================
-
-/**
- * 摄像头占位面板（16:9 比例的黑色矩形）。
- * 以后接了真摄像头，把 Box 里的 Text 换成 AndroidView + CameraX 即可。
- */
-@Composable
-private fun CameraPanel() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(16f / 9f)          // 固定 16:9 宽高比
-            .clip(RoundedCornerShape(16.dp)) // 圆角 16dp
-            .background(Color(0xFF1C1C1E)), // 深灰背景（模拟摄像头待机）
-        contentAlignment = Alignment.Center
-    ) {
-        // 里面叠两层 Column：文字居中小标题
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "摄像头",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "视频功能待接入",
-                color = Color.White.copy(alpha = 0.6f),
-                style = MaterialTheme.typography.bodySmall
-            )
+    // 离开首页 / 切后台时关掉采集：避免麦克风在后台一直占用（Android 11+ 还会静音并亮隐私灯）
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) viewModel.stopVoice()
         }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.stopVoice()
+        }
+    }
 
-        // 左上角小标签（未连接时显示）
-        Text(
-            text = "未连接",
-            color = Color.White.copy(alpha = 0.7f),
-            style = MaterialTheme.typography.labelSmall,
+    var gear by rememberSaveable { mutableIntStateOf(M.SPEED_MAX) }
+    var gearMenuOpen by remember { mutableStateOf(false) }
+
+    val onToggleVoice: () -> Unit = {
+        if (voiceOn) {
+            viewModel.stopVoice()
+        } else if (viewModel.hasVoicePermission()) {
+            viewModel.startVoice()
+        } else {
+            voicePermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // ==================== 1. 状态行：标题栏下，圆角矩形底 ====================
+        HomeStatusRow(
+            status = status,
             modifier = Modifier
-                .align(Alignment.TopStart)      // Box 内的定位：左上角
-                .padding(12.dp)
+                .fillMaxWidth()
+                .padding(start = HOME_MARGIN, end = HOME_MARGIN, top = HOME_GAP)
+                .height(HOME_STATUS_HEIGHT)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                .padding(horizontal = 12.dp)
         )
-    }
-}
 
-/**
- * 状态卡片：四列并排显示连接状态、设备名、电量、速度。
- */
-@Composable
-private fun StatusCard(
-    connected: Boolean,
-    deviceName: String?,
-    battery: Double,
-    speed: Double
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+        // ==================== 2. 摄像头 200dp（左右 18dp）+ 左下速度 / 右下语音浮层 ====================
+        CameraBlock(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = HOME_MARGIN, end = HOME_MARGIN, top = HOME_GAP)
+                .height(HOME_CAMERA_HEIGHT),
+            onOpenDetail = onOpenDetail,
+            speed = {
+                GearBallPicker(
+                    gear = gear,
+                    expanded = gearMenuOpen,
+                    onExpandedChange = { gearMenuOpen = it },
+                    onSelect = {
+                        gear = it
+                        gearMenuOpen = false
+                    },
+                    buttonSize = HOME_SPEED_SIZE,
+                    // 向右弹出：底边与按钮齐平、往上排，弹层不越出摄像头区、不挡下方轮盘
+                    expandRight = true
+                )
+            },
+            voice = {
+                VoiceCircleButton(
+                    on = voiceOn,
+                    size = HOME_VOICE_SIZE,
+                    onClick = onToggleVoice
+                )
+            }
+        )
+
+        // ==================== 3. 方向轮盘 + 云台轮盘（并排、同尺寸）====================
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(start = HOME_MARGIN, end = HOME_MARGIN, top = HOME_GAP)
+                .weight(1f),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
         ) {
-            InfoCell(
-                label = "连接",
-                value = if (connected) "已连接" else "未连接",
-                modifier = Modifier.weight(1f)
-            )
-            InfoCell(
-                label = "设备",
-                value = deviceName ?: "—",
-                modifier = Modifier.weight(1f)
-            )
-            InfoCell(
-                label = "电量",
-                value = if (battery > 0) "%.1f%%".format(battery) else "—",
-                modifier = Modifier.weight(1f)
-            )
-            InfoCell(
-                label = "速度",
-                value = if (speed > 0) "%.2f m/s".format(speed) else "—",
-                modifier = Modifier.weight(1f)
-            )
+            WheelUnit(caption = "方向") {
+                JoystickDrive(
+                    size = HOME_WHEEL_SIZE,
+                    gear = gear,
+                    viewModel = viewModel
+                )
+            }
+            WheelUnit(caption = "云台") {
+                GimbalJoystick(
+                    size = HOME_WHEEL_SIZE,
+                    onVector = { pan, tilt ->
+                        // 0xEC：pan 正 = 右 / tilt 正 = 上，与移动帧独立
+                        if (!viewModel.sendGimbalVector(pan, tilt)) viewModel.notifyCommandDropped()
+                    },
+                    onStop = {
+                        // 协议没有云台停止字段：停发即停转，300ms 无新帧固件自停且不回中
+                    }
+                )
+            }
         }
     }
 }
 
-/**
- * 状态卡片里的一格：上面小标签，下面大数值。
- * weight(1f) 让四格平均分宽度。
- */
+/** 轮盘 + 下方小标题（两个轮盘看起来一样，需要文字区分方向 / 云台） */
 @Composable
-private fun InfoCell(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
+private fun WheelUnit(caption: String, content: @Composable () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        content()
+        Spacer(Modifier.height(6.dp))
         Text(
-            text = label,
+            text = caption,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+// ======================================================================
+//  状态行（48dp）
+// ======================================================================
+
+/**
+ * 标题栏与摄像头之间的状态行。
+ *
+ * 左：WiFi（图标 + 百分比），靠左；
+ * 右：速度 `x.x m/s`、电量（图标 + 百分比）。
+ *
+ * 更新来源（无数据时显示「—」占位，不写死灰字）：
+ * - WiFi 百分比：由 DAT_WIFI_STATUS 的 RSSI（dBm）换算 → `status.wifiRssi`
+ * - 电量：DAT_BAT 电压换算出的百分比 → `status.battery`
+ * - 速度：DAT_WHEEL 双轮转速换算 → `status.speed`
+ */
+@Composable
+private fun HomeStatusRow(status: CarStatus, modifier: Modifier = Modifier) {
+    val wifiPercent: Int? = status.wifiRssi?.let { rssiToPercent(it) }
+    val batteryPercent: Double? = status.battery.takeIf { it > 0.0 }
+    val speed: Double? = status.speed.takeIf { status.connected }
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // ---- 左：WiFi ----
+        SignalItem(
+            icon = Icons.Filled.Wifi,
+            percent = wifiPercent,
+            description = "WiFi 信号"
+        )
+
+        Spacer(Modifier.weight(1f))
+
+        // ---- 右：速度 + 电量 ----
         Text(
-            text = value,
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,                        // 最多 1 行
-            overflow = TextOverflow.Ellipsis     // 超出显示 ...
+            text = speed?.let { "%.1f m/s".format(it) } ?: "—",
+            style = MaterialTheme.typography.labelLarge,
+            color = if (speed == null) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        )
+        Spacer(Modifier.size(10.dp))
+        BatteryItem(percent = batteryPercent)
+    }
+}
+
+/** WiFi 信号一项：图标 + 百分比。0 或无数值灰，良好白，差红 */
+@Composable
+private fun SignalItem(icon: ImageVector, percent: Int?, description: String) {
+    val color = when {
+        percent == null || percent <= 0 -> MaterialTheme.colorScheme.onSurfaceVariant
+        percent < SIGNAL_POOR_THRESHOLD -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = description,
+            tint = color,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.size(4.dp))
+        Text(
+            text = if (percent == null || percent <= 0) "—" else "$percent%",
+            style = MaterialTheme.typography.labelLarge,
+            color = color
         )
     }
 }
 
-// ----------------------------------------------------------------------
-//  方向键盘
-// ----------------------------------------------------------------------
-
-/**
- * 十字方向键盘整体。
- *
- * 布局：
- *       ▲
- *  ◀    ■    ▶
- *       ▼
- *
- * 中间那个是 STOP 键（红色圆形），四角/四边是方向键。
- */
+/** 电量一项：<15% 红、15~20% 橙、20~50% 蓝、其余白 */
 @Composable
-private fun DirectionPad(viewModel: MainViewModel) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        DirectionKey("▲", M.CMD_FORWARD, viewModel)
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            DirectionKey("◀", M.CMD_LEFT, viewModel)
-            DirectionKey("■", M.CMD_STOP, viewModel, isStop = true)
-            DirectionKey("▶", M.CMD_RIGHT, viewModel)
-        }
-
-        DirectionKey("▼", M.CMD_BACK, viewModel)
+private fun BatteryItem(percent: Double?) {
+    val color = when {
+        percent == null -> MaterialTheme.colorScheme.onSurfaceVariant
+        percent < 15.0 -> MaterialTheme.colorScheme.error
+        percent < 20.0 -> Color(0xFFFF9800)
+        percent < 50.0 -> Color(0xFF2196F3)
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Filled.BatteryFull,
+            contentDescription = "电量",
+            tint = color,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.size(4.dp))
+        Text(
+            text = percent?.let { "${it.roundToInt()}%" } ?: "—",
+            style = MaterialTheme.typography.labelLarge,
+            color = color
+        )
     }
 }
 
+/** dBm → 0~100 百分比：-100dBm 及以下算 0，-40dBm 及以上算 100 */
+private fun rssiToPercent(rssi: Int): Int =
+    ((rssi + 100) * 100 / 60).coerceIn(0, 100)
+
+// ======================================================================
+//  摄像头区
+// ======================================================================
+
 /**
- * 单个方向键。
+ * 视频画面占位区（摄像头 200dp）。
  *
- * 【交互逻辑】
- *  - 按下 → 发送方向命令（带 speed=100，即最大速度的 100%）
- *  - 松手 → 自动发送 STOP 命令（isStop=true 的键除外）
- *  - STOP 键按下只发一次 STOP，松手不再额外发
+ * - 整块可点进详细操控页；
+ * - 右上角圆形入口（同一个回调）；
+ * - 速度按钮浮在**左下角**、语音按钮浮在**右下角**，与摄像头区左右边缘对齐；
+ *   两者外面各套一层无涟漪的空 clickable，按下事件在这里就被吃掉，
+ *   不会穿透到整块的 [onOpenDetail]。
  *
- * 【参数说明】
- * @param label 键盘上显示的文字，比如 "▲"、"◀"
- * @param cmdKindType 对应的 CMD KIND_TYPE，比如 M.CMD_FORWARD
- * @param viewModel 发命令通过 viewModel
- * @param isStop true = STOP 键，红色背景，松手不自动发 STOP
- * @param speed 挡位百分比 0~100（V1.7 起含义是"最大速度 / 最大回转速度的百分比"，0 = 停止）
+ * @param speed 左下角速度按钮（挡位弹层向右弹）
+ * @param voice 右下角语音按钮
  */
 @Composable
-private fun DirectionKey(
-    label: String,
-    cmdKindType: Int,
-    viewModel: MainViewModel,
-    isStop: Boolean = false,
-    speed: Int = M.SPEED_MAX
+private fun CameraBlock(
+    modifier: Modifier,
+    onOpenDetail: () -> Unit,
+    speed: @Composable () -> Unit,
+    voice: @Composable () -> Unit
 ) {
     Box(
-        modifier = Modifier
-            .size(68.dp)                     // 固定 68x68dp
-            .clip(CircleShape)               // 先裁成圆形
-            .background(
-                if (isStop) MaterialTheme.colorScheme.errorContainer
-                else MaterialTheme.colorScheme.primaryContainer
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF1C1C1E))
+            // 不画涟漪，保持视频画面干净
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onOpenDetail
             )
-            .pointerInput(cmdKindType) {       // detectTapGestures 识别按压手势
-                detectTapGestures(
-                    onPress = {
-                        // 手指按下那一刻：发送方向命令
-                        viewModel.sendCommand(cmdKindType, speed)
-                        // tryAwaitRelease() = 挂起等待手指抬起
-                        // 返回后手指已经离开屏幕
-                        tryAwaitRelease()
-                        // 松手后（如果不是 STOP 键）自动发 STOP
-                        if (!isStop) {
-                            viewModel.sendCommand(M.CMD_STOP, 0)
-                        }
-                    }
-                )
-            },
+    ) {
+        DetailEntryButton(
+            onClick = onOpenDetail,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp)
+        )
+
+        // ---- 左下：速度 ----
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(8.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { /* 速度按钮区：只吃触摸，不跳详细操控页 */ }
+        ) { speed() }
+
+        // ---- 右下：语音 ----
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(8.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { /* 语音按钮区：只吃触摸，不跳详细操控页 */ }
+        ) { voice() }
+    }
+}
+
+/**
+ * 进入详细操控页的圆形入口（36dp）——可复用控件。
+ * 只负责回调，跳转逻辑由调用方集中处理。
+ */
+@Composable
+fun DetailEntryButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.16f))
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleLarge,
-            // 反色文字：primaryContainer 背景用 primary 色字；errorContainer 用 error 色字
-            color = if (isStop) MaterialTheme.colorScheme.onErrorContainer
-                   else MaterialTheme.colorScheme.onPrimaryContainer
+        Icon(
+            imageVector = Icons.Filled.Tune,
+            contentDescription = "进入详细操控页",
+            tint = Color.White,
+            modifier = Modifier.size(18.dp)
         )
     }
 }
 
+// 首页的操控已全部由「速度 + 语音 + 方向/云台双轮盘」承担，
+// 发送链路仍是详细操控页那一套（JoystickDrive → ThrottledSender → sendMoveVector）。
 

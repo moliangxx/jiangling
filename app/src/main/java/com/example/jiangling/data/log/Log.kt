@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 /**
  * 日志实体。
- * time 由手机端生成，level 使用 M.LOG_LEVEL_DEBUG / WARNING / ERROR。
+ * time 由手机端生成，level 使用 M.LOG_LEVEL_DEBUG / INFO / WARNING / ERROR。
  */
 @Entity(tableName = "log")
 data class Log(

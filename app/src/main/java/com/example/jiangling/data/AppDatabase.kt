@@ -14,15 +14,14 @@ import com.example.jiangling.util.M
  * Room 数据库——全局唯一实例。
  *
  * 两张表：
- *   - log：蓝牙收发日志、错误、操作记录
+ *   - log：板子推送的日志、错误、操作记录
  *   - command：发送过的命令 + 板子 ACK 回复
  *
  * version = 5 表示数据库结构版本；改动表结构后需要升级 version 号。
  * 当前用 fallbackToDestructiveMigration：升级时直接清空重建（开发期够用，
  * 正式版需要写 Migration 保留用户数据）。
  *
- * 单例实现用双重检查锁（DCL），@Volatile instance 保证多线程可见性
- * ——和 BleManager 里的单例写法一样。
+ * 单例实现用双重检查锁（DCL），@Volatile instance 保证多线程可见性。
  */
 @Database(entities = [Log::class, Command::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {

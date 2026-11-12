@@ -17,7 +17,7 @@ import java.util.Locale
  * - U.s(text)         → 全局提示通道，任何地方都能调，UI 层 collectAsState() 自动弹出
  * - U.u8 / u16be / i16be / u32be ... → 报文里的字节解析，避免业务代码满屏 `and 0xFF`、`shl`；**多字节一律大端**
  *
- * 蓝牙权限已全部迁到 MainActivity（项目小、权限少，由 Activity 统一负责申请）。
+ * 麦克风权限在首页/操控页点语音开关时各自申请（见 HomeCompose / ControlCompose）。
  */
 object U {
 
@@ -43,7 +43,7 @@ object U {
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
     }
 
-    // ==================== 字节解析（BLE 报文用） ====================
+    // ==================== 字节解析（协议报文用） ====================
     //
     // 这一组的作用：把"取第几个字节、无符号、大小端"这些样板代码收进来，
     // 业务层只写「读电量 → 读电压」这种流程，不再出现 `and 0xFF` / `shl`。

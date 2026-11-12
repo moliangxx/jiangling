@@ -52,7 +52,7 @@ fun DetailCompose(viewModel: MainViewModel) {
                 )
                 // HorizontalDivider 是横向分隔线，padding 控制上下留白
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-                MetricRow(label = "设备名称", value = status.deviceName ?: "—")
+                MetricRow(label = "主板地址", value = status.boardIp ?: "—")
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                 MetricRow(
                     label = "电量",

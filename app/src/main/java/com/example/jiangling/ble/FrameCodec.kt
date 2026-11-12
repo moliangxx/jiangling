@@ -11,7 +11,7 @@ import com.example.jiangling.util.U
  * 一条报文 = SEQ + TYPE + PAYLOAD；KIND（大类）由 TYPE 的高 2 bit 决定。
  * 设备端推什么，上层就收到对应的子类对象，不需要再看字节。
  *
- * V1.10：TYPE = KIND(bit7-6) + 分区(bit5-4) + 类型(bit3-0)，长度不再由 LEN 字段携带。
+ * 协议 21：`AA | SEQ | TYPE | LEN | PAYLOAD(LEN) | CRC8`，帧总长 = 5 + LEN。
  */
 sealed class Frame {
     abstract val seq: Byte
@@ -26,7 +26,7 @@ sealed class Frame {
         val payload: ByteArray
     ) : Frame()
 
-    /** 应答（对某条 CMD 的回复；PAYLOAD[0] = 回复状态，SEQ=0 时 PAYLOAD[1] = resetDone） */
+    /** 应答（对某条 CMD 的回复；PAYLOAD 固定 2 B） */
     data class Ack(
         override val seq: Byte,
         override val kindType: Int,
@@ -35,12 +35,12 @@ sealed class Frame {
 
     /**
      * 日志（只有小车会推，App 端不产生）。
-     * 一帧固定 8 条记录，每条 = TYPE(1B) + 参数(1B)。
+     * PAYLOAD 里是若干条 `[记录TYPE 1B][记录LEN 1B][数据]`，条数可变（最多 8 条、无空槽）。
      */
     data class Log(
         override val seq: Byte,
         val records: List<LogRecord>,
-        /** 16 字节原始记录区（8×2），用于保留原始字节、排查码表不同步 */
+        /** 原始记录区（整段 PAYLOAD），用于保留原始字节、排查码表不同步 */
         val raw: ByteArray
     ) : Frame() {
         override val kindType: Int get() = -1
@@ -54,38 +54,32 @@ sealed class Frame {
     ) : Frame()
 }
 
-/** 一条 LOG 记录：TYPE（含 kind=LOG + 等级 + 模块）+ 单字节参数 */
-data class LogRecord(val type: Byte, val param: Byte) {
-    /** 空槽：TYPE=0x00 且参数=0x00（不满 8 条时的填充） */
-    val isEmpty: Boolean get() = (type.toInt() and 0xFF) == 0 && (param.toInt() and 0xFF) == 0
-}
+/**
+ * 一条 LOG 记录：记录 TYPE（等级 + 模块）+ 单字节参数。
+ * 记录 LEN 为 1 时参数就是唯一的数据字节；LEN 更大时取首字节，其余保留在 [Frame.Log.raw]。
+ */
+data class LogRecord(val type: Byte, val param: Byte)
 
 /**
  * ======================================================================
  *  FrameCodec —— 帧处理器
  * ======================================================================
  *
- *  【职责】只做"字节 ⇄ Frame"这一件事，**完全不依赖 Android 蓝牙 API、无状态、不碰数据库**：
- *    - 接收：把收到的字节块追加进缓冲区，自动找帧头、校验 CRC、拆出 Frame
+ *  【职责】只做"字节 ⇄ Frame"这一件事，**不依赖任何传输实现、无状态、不碰数据库**：
+ *    - 接收：把收到的字节块追加进缓冲区，找帧头、按 LEN 定界、校验 CRC、拆出 Frame
  *    - 发送：把 kind/kindType/seq/payload 编成完整二进制帧
  *
- *  【协作关系】
- *    唯一调用方是 [BleManager]：收到通知 → codec.receive()；要发送 → codec.encode()。
- *    解析出的 Frame 由 BleManager 转发到 frames，再由 BleDataViewModel 处理业务与入库。
- *    本类不认识 ViewModel、仓库、Room。
+ *  【帧格式（协议 21，带 LEN）】
+ *    HEAD(0xAA) | SEQ(1B) | TYPE(1B) | LEN(1B) | PAYLOAD(LEN B) | CRC8(1B)
+ *    整帧长度 = 5 + LEN；LEN 只表示 PAYLOAD 字节数，不含自身、不含 CRC。
  *
- *  【帧格式 V1.10（没有 LEN）】
- *    普通帧：HEAD(0xAA) | SEQ(1B) | TYPE(1B) | PAYLOAD(静态表长度) | CRC8(1B)
- *    LOG 帧：HEAD(0xAA) | SEQ(1B) | [TYPE(1B) 参数(1B)] × 8 | CRC8(1B)  = 19 字节
- *
- *    - 收到第 3 个字节即可通过 [M.frameLen] 得知整帧长度，可跨 BLE 通知分片重组；
- *    - LOG 帧的记录从槽 0 开始**连续左对齐填充**，空槽只出现在尾部，
- *      因此第 3 字节一定是带 kind=LOG 的记录 TYPE，不会被误判成 ACK；
- *    - 未知 TYPE：**整帧丢弃**，从下一个字节开始重扫 0xAA（不猜长度）；
- *    - CRC8 覆盖从 HEAD(0xAA) 起、到最后一个 PAYLOAD 字节（长度 = 整帧长 - 1）。
+ *    - 收到第 4 个字节就能按 `5 + LEN` 定界，可跨 TCP 分片重组，不再靠超时猜边界；
+ *    - TYPE + LEN 组合必须落在 [M.payloadLenRange] 允许范围，否则整帧丢弃并逐字节重扫 0xAA；
+ *    - LOG 帧容器 TYPE 固定 `0x42`，记录循环解析直到 LEN 用完；
+ *    - CRC8 覆盖 HEAD(0xAA) 到最后一个 PAYLOAD 字节（**包含 LEN**）。
  *
  *  @param onFrame 解析出一条完整报文时回调（在调用 receive() 的线程上同步回调）
- *  @param onError 报文异常时回调（未知 TYPE、CRC 连续失败等）
+ *  @param onError 报文异常时回调（未知 TYPE、LEN 越界、LOG 记录区不完整等）
  */
 class FrameCodec(
     private val onFrame: (Frame) -> Unit,
@@ -102,7 +96,7 @@ class FrameCodec(
     // ==================== 接收 ====================
 
     /**
-     * 收到一块数据（BLE 一个 notify 就是一块，可能半帧、也可能多帧粘在一起）。
+     * 收到一块数据（TCP 一次读 / UDP 一个报文就是一块，可能半帧、也可能多帧粘在一起）。
      * 内部会追加到缓冲区然后循环解析，解析出来的报文通过 [onFrame] 回调。
      */
     fun receive(chunk: ByteArray) {
@@ -122,7 +116,7 @@ class FrameCodec(
 
     /**
      * 解析缓冲区里的所有完整帧。
-     * 逐条处理：找头 → 查表得整帧长度 → 校验 CRC → 取出 PAYLOAD → 移除已解析部分 → 回调。
+     * 逐条处理：找头 → 读 TYPE/LEN 定界 → 校验 CRC → 取出 PAYLOAD → 移除已解析部分 → 回调。
      */
     private fun parse() {
         while (true) {
@@ -144,66 +138,88 @@ class FrameCodec(
                 waitingPartial = false
             }
 
-            // ---- ② 连 TYPE 字节都没到：等下一块；超过 1 s 说明是半帧，丢 1 字节重扫 ----
-            if (offset < 3) {
+            // ---- ② TYPE / LEN 都还没到：等下一块；超过 1 s 说明是残帧，丢 1 字节重扫 ----
+            if (offset < M.FRAME_OVERHEAD - 1) {
                 if (partialTimedOut(now)) { dropHead(); continue }
                 markPartial(now)
                 return
             }
 
-            // ---- ③ 查静态长度表（LOG 固定 19，其余按 TYPE 决定）----
+            // ---- ③ 读 LEN 定界：整帧长度 = 5 + LEN，并校验 TYPE+LEN 组合 ----
             val seq = buffer[1]
-            val type = buffer[2]
-            val frameLen = M.frameLen(type.toInt() and 0xFF)
+            val type = buffer[2].toInt() and 0xFF
+            val len = buffer[M.LEN_OFFSET].toInt() and 0xFF
+            val frameLen = M.frameLen(type, len)
             if (frameLen < 0) {
-                // 未知 TYPE：不猜长度，整帧丢弃，逐字节重扫 0xAA
-                onError("未知 TYPE 0x${"%02X".format(type)}，已丢弃并重新同步")
+                // 未知 TYPE 或 LEN 越界：不猜长度，整帧丢弃，逐字节重扫 0xAA
+                onError("TYPE 0x${"%02X".format(type)} 的 LEN=$len 非法，已丢弃并重新同步")
                 dropHead()
                 continue
             }
 
-            // 数据还没到齐，等下一块；超时同样丢 1 字节重扫
+            // LEN 没到头之前不能动已缓存字节，等下一块；超时同样丢 1 字节重扫
             if (offset < frameLen) {
                 if (partialTimedOut(now)) { dropHead(); continue }
                 markPartial(now)
                 return
             }
 
-            // ---- ④ CRC 校验：从 0xAA 起覆盖到最后一个 PAYLOAD 字节，共 frameLen-1 字节 ----
+            // ---- ④ CRC 校验：从 0xAA 起覆盖到最后一个 PAYLOAD 字节（含 LEN），共 frameLen-1 字节 ----
             if (M.crc8(buffer, frameLen - 1) != buffer[frameLen - 1]) {
                 dropHead()
                 continue
             }
 
-            // ---- ⑤ 先把内容拷出来（必须在移除帧之前拷，避免多帧粘包时读脏数据）----
-            val kind = M.kindOf(type)
-            val kindType = M.kindTypeOf(type)
-
-            // 普通帧：PAYLOAD 从第 4 字节开始，长度 = frameLen - 4（HEAD+SEQ+TYPE+CRC8）
-            // LOG 帧：16 字节记录区从第 3 字节开始（HEAD+SEQ 之后，没有 TYPE 字段）
-            val payload = if (kind == M.KIND_LOG) ByteArray(0) else U.slice(buffer, 3, frameLen - 4)
-            val logRaw = if (kind == M.KIND_LOG) U.slice(buffer, 2, LOG_RECORDS_BYTES) else ByteArray(0)
+            // ---- ⑤ 先把 PAYLOAD 拷出来（必须在移除帧之前拷，避免多帧粘包时读脏数据）----
+            val kind = M.kindOf(type.toByte())
+            val kindType = type and 0x3F
+            val payload = U.slice(buffer, M.FRAME_OVERHEAD - 1, len)
 
             // ---- ⑥ 移除已解析的这一帧 ----
             System.arraycopy(buffer, frameLen, buffer, 0, offset - frameLen)
             offset -= frameLen
             waitingPartial = false
 
-            // ---- ⑦ 按 KIND 分流 ----
+            // ---- ⑦ 按 KIND 分流；LOG 帧的 PAYLOAD 需要循环拆记录 ----
             when (kind) {
                 M.KIND_ACK -> onFrame(Frame.Ack(seq, kindType, payload))
                 M.KIND_DAT -> onFrame(Frame.Dat(seq, kindType, payload))
                 M.KIND_CMD -> onFrame(Frame.Cmd(seq, kindType, payload))
                 M.KIND_LOG -> {
-                    val records = ArrayList<LogRecord>(M.LOG_FRAME_RECORDS)
-                    for (i in 0 until M.LOG_FRAME_RECORDS) {
-                        records.add(LogRecord(logRaw[i * 2], logRaw[i * 2 + 1]))
+                    val records = parseLogRecords(payload)
+                    if (records == null) {
+                        onError("LOG 记录区不完整，整帧丢弃")
+                        continue
                     }
-                    onFrame(Frame.Log(seq, records, logRaw))
+                    onFrame(Frame.Log(seq, records, payload))
                 }
                 else -> onError("未知 KIND: $kind")
             }
         }
+    }
+
+    /**
+     * 循环解析 LOG PAYLOAD：`[记录TYPE 1B][记录LEN 1B][数据 LEN B]`，
+     * 一直解析到 LEN 用完；记录长度非法、条数为 0 或超过 8 条时返回 null（整帧丢弃）。
+     */
+    private fun parseLogRecords(payload: ByteArray): List<LogRecord>? {
+        val records = ArrayList<LogRecord>(M.LOG_MAX_RECORDS)
+        var pos = 0
+        while (pos < payload.size) {
+            // 连记录头都不够，记录区不完整
+            if (pos + M.LOG_RECORD_HEADER_BYTES > payload.size) return null
+            val recordType = payload[pos]
+            val recordLen = payload[pos + 1].toInt() and 0xFF
+            // 记录 LEN 至少 1 B，且不能越出本帧 PAYLOAD
+            if (recordLen <= 0) return null
+            if (pos + M.LOG_RECORD_HEADER_BYTES + recordLen > payload.size) return null
+            if (records.size >= M.LOG_MAX_RECORDS) return null
+
+            val dataIndex = pos + M.LOG_RECORD_HEADER_BYTES
+            records.add(LogRecord(recordType, payload[dataIndex]))
+            pos = dataIndex + recordLen
+        }
+        return records.takeIf { it.isNotEmpty() }
     }
 
     /** 记录"这一帧开始等后续字节"的时刻；已经记过就不覆盖，保证超时从半帧开始算 */
@@ -233,33 +249,38 @@ class FrameCodec(
     // ==================== 发送 ====================
 
     /**
-     * 把数据编成完整二进制帧。只负责拼字节，不负责写蓝牙。
+     * 把数据编成完整二进制帧。只负责拼字节，不负责发送。
      *
-     * @return 编好的帧；TYPE 未登记，或 PAYLOAD 长度与静态表不一致时返回 null
+     * @return 编好的帧；TYPE 未登记，或 PAYLOAD 长度不在该 TYPE 允许范围时返回 null
      */
-    fun encode(kind: Int, kindType: Int, seq: Byte, payload: ByteArray): ByteArray? {
-        val type = M.typeOf(kind, kindType)
-        val expected = M.payloadLen(type.toInt() and 0xFF)
-        if (expected < 0 || payload.size != expected) return null
+    fun encode(kind: Int, kindType: Int, seq: Byte, payload: ByteArray): ByteArray? =
+        encodeFrame(kind, kindType, seq, payload)
 
-        val frameLen = 3 + payload.size + 1  // HEAD+SEQ+TYPE+PAYLOAD+CRC8
-        val frame = ByteArray(frameLen)
-        frame[0] = M.FRAME_HEAD
-        frame[1] = seq
-        frame[2] = type
-        System.arraycopy(payload, 0, frame, 3, payload.size)
-        frame[frameLen - 1] = M.crc8(frame, frameLen - 1)
-        return frame
-    }
-
-    private companion object {
-        /** 接收缓冲上限：够放很多帧，正常远不会满 */
-        const val MAX_RECEIVE_BUFFER = 2_048
-
-        /** LOG 帧记录区字节数：8 条 × 每条 2 字节（TYPE + 参数） */
-        const val LOG_RECORDS_BYTES = M.LOG_FRAME_RECORDS * 2
+    companion object {
+        /** 接收缓冲上限：够放很多帧（单帧最大 260 B），正常远不会满 */
+        private const val MAX_RECEIVE_BUFFER = 2_048
 
         /** 半帧等待上限：超过就按文档丢 1 字节重扫，避免残缺帧长期占住缓冲区 */
-        const val FRAME_TIMEOUT_MS = 1_000L
+        private const val FRAME_TIMEOUT_MS = 1_000L
+
+        /**
+         * 无状态编码入口：不需要解析器实例，供"只发不收"的调用点（握手、ACK）使用。
+         *
+         * @return 编好的帧；TYPE 未登记，或 PAYLOAD 长度不在该 TYPE 允许范围时返回 null
+         */
+        fun encodeFrame(kind: Int, kindType: Int, seq: Byte, payload: ByteArray): ByteArray? {
+            val type = M.typeOf(kind, kindType)
+            if (!M.payloadLenValid(type.toInt() and 0xFF, payload.size)) return null
+
+            val frameLen = M.FRAME_OVERHEAD + payload.size
+            val frame = ByteArray(frameLen)
+            frame[0] = M.FRAME_HEAD
+            frame[1] = seq
+            frame[2] = type
+            frame[M.LEN_OFFSET] = payload.size.toByte()
+            System.arraycopy(payload, 0, frame, M.FRAME_OVERHEAD - 1, payload.size)
+            frame[frameLen - 1] = M.crc8(frame, frameLen - 1)
+            return frame
+        }
     }
 }

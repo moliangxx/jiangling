@@ -4,11 +4,12 @@ package com.example.jiangling.data
  * 小车实时状态——进程态，**不持久化**。
  *
  * 【数据从哪来】
- * BleManager 收到板子发来的 DAT 帧后，由 BleDataViewModel.handleDatFrame() 解析 PAYLOAD，
+ * WifiLink 收到板子发来的 DAT 帧后，由 BleDataViewModel.handleDatFrame() 解析 PAYLOAD，
  * 把数值写进这里。每个字段对应一种 DAT KIND_TYPE（见 M.kt 的 DAT_* 常量）。
+ * `connected` 由 MainViewModel 按 WiFi 通道是否 READY 写入，不是 DAT 字段。
  *
  * 【什么时候停止更新】
- * 蓝牙断开后 BleManager 不会再收到 DAT 帧 → 这个对象的字段就不再变化，
+ * WiFi 断开后不会再收到 DAT 帧 → 这个对象的字段就不再变化，
  * 页面上显示的数值会停留在"最后一次收到的值"。
  *
  * 【什么时候清零】
@@ -28,15 +29,9 @@ package com.example.jiangling.data
  */
 data class CarStatus(
 
-    // ======= 连接相关（不是 DAT 帧，来自 GATT 连接状态）=======
-    /** 蓝牙连接状态，true = 已连上（不一定握手成功） */
+    // ======= 连接相关（不是 DAT 帧，来自 WiFi 通道状态）=======
+    /** WiFi 命令通道是否 READY（UDP 8081 已开 + TCP 8080 回程已连） */
     val connected: Boolean = false,
-
-    /** 板子名字，从 BLE GATT 读出来的 */
-    val deviceName: String? = null,
-
-    /** 当前协商好的 MTU，决定单帧最大 payload */
-    val mtu: Int = 23,
 
     // ======= 运动数据（对应 M.DAT_WHEEL = 2）=======
     /** 左轮转速（r/s，允许负数表示反转） */
@@ -82,6 +77,34 @@ data class CarStatus(
 
     /** 日志丢弃累计条数 */
     val logDropped: Int? = null,
+
+    // ======= WiFi 状态（对应 M.DAT_WIFI_STATUS = 0x86）=======
+    /**
+     * 只在 `CMD_WIFI_STATUS(0xC7)` 的 ACK 之后补发一帧，**不做周期上报**：
+     * 字段停在最后一次收到的值，未收到时为 null。
+     *
+     * mode：0=STA（连路由器）/ 1=AP（自建热点）/ 2=APSTA
+     */
+    val wifiMode: Int? = null,
+
+    /** 连接状态：0=未连路由器 / 1=已连但无外网 / 2=有外网 */
+    val wifiState: Int? = null,
+
+    /** 当前 IPv4 出口地址（AP 为 192.168.4.1）；未收到或全 0 时为 null */
+    val wifiIp: String? = null,
+
+    /** 路由器 RSSI（dBm）；未连路由器（0xFFFF）时为 null */
+    val wifiRssi: Int? = null,
+
+    // ======= 初始化阶段（对应 M.DAT_INIT_STATE = 0x87）=======
+    /**
+     * 主板阶段：0=未初始化 / 1=配置中 / 2=连接中 / 3=已连网络并拿到 IP / 4=热点已起（降级）/ 5=失败。
+     * 事件触发（`0xC8` 完成、`0xC9` 查询、网络三态跳变），未收到为 null。
+     */
+    val initStage: Int? = null,
+
+    /** 主板出口地址（来自 `0x87[5~8]`，WiFi 命令通道的目标地址）；无地址时为 null */
+    val boardIp: String? = null,
 
     // ======= 预留：以后板子加了对应的 DAT 帧再启用 =======
     /** 超声波测距（单位 cm，对应 M.DAT_US = 1） */
