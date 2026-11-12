@@ -20,3 +20,5 @@ local.properties
 BLE通信协议/
 江灵通信协议.md
 江灵通信协议-单文件版.md
+.idea/
+.kotlin/
