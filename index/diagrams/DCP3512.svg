@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1000" font-family="Noto Sans SC, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fefce8"/>
+      <stop offset="1" stop-color="#fef9c3"/>
+    </linearGradient>
+    <linearGradient id="pcb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e3a8a"/>
+      <stop offset="1" stop-color="#172554"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1500" height="1000" fill="url(#bg)"/>
+
+  <text x="40" y="55" font-size="28" font-weight="700" fill="#0f172a">DCP3512 四路电源模块 V2.0 · 引脚功能图</text>
+  <text x="40" y="85" font-size="15" fill="#475569">DC-DC 降压 · 输入 6~30V · 四路独立输出(3.3V/5V/12V/ADJ) · 尺寸 59.3×45mm</text>
+
+  <!-- PCB 主体 -->
+  <rect x="250" y="150" width="1000" height="580" rx="8" fill="url(#pcb)" stroke="#1e40af" stroke-width="2"/>
+
+  <!-- 尺寸标注 -->
+  <text x="250" y="142" font-size="12" fill="#93c5fd">← 长 59.3mm →</text>
+  <text x="1248" y="440" font-size="12" fill="#93c5fd" transform="rotate(90 1248 440)">宽 45mm</text>
+
+  <!-- M3 定位孔 -->
+  <g fill="#0f172a" stroke="#60a5fa" stroke-width="2">
+    <circle cx="270" cy="170" r="10"/>
+    <circle cx="1230" cy="170" r="10"/>
+    <circle cx="270" cy="710" r="10"/>
+    <circle cx="1230" cy="710" r="10"/>
+  </g>
+  <text x="1238" y="162" font-size="10" fill="#93c5fd">M3</text>
+
+  <!-- 输入区 -->
+  <text x="280" y="200" font-size="14" font-weight="700" fill="#fef3c7">输入端（接电池）</text>
+  <rect x="280" y="212" width="190" height="40" rx="4" fill="#dc2626"/>
+  <text x="375" y="238" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">VIN+ 6~30V</text>
+  <rect x="280" y="258" width="190" height="40" rx="4" fill="#1e293b"/>
+  <text x="375" y="284" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">VIN- GND</text>
+
+  <!-- 电源开关 -->
+  <rect x="280" y="310" width="190" height="44" rx="4" fill="#f59e0b"/>
+  <text x="375" y="337" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">电源开关</text>
+
+  <!-- 输入电容 -->
+  <rect x="280" y="368" width="190" height="34" rx="4" fill="#334155"/>
+  <text x="375" y="390" font-size="11" font-weight="600" fill="#e2e8f0" text-anchor="middle">输入电容 100μF/35V ×4</text>
+
+  <!-- 输入电流说明 -->
+  <rect x="280" y="416" width="190" height="80" rx="4" fill="#1e3a8a" stroke="#3b82f6"/>
+  <text x="375" y="438" font-size="11" font-weight="700" fill="#93c5fd" text-anchor="middle">输入电流(估算)</text>
+  <text x="375" y="456" font-size="10" fill="#bfdbfe" text-anchor="middle">= 输出功率÷输入电压÷0.85</text>
+  <text x="375" y="474" font-size="10" fill="#bfdbfe" text-anchor="middle">例:5V×3.5A满载→7.4V</text>
+  <text x="375" y="490" font-size="10" fill="#bfdbfe" text-anchor="middle">输入约2.8A</text>
+
+  <!-- 四路输出（从上到下：ADJ / 12V / 5V / 3.3V） -->
+  <!-- ADJ 路 -->
+  <g font-size="12" font-weight="700">
+    <rect x="520" y="190" width="150" height="44" rx="4" fill="#a855f7"/>
+    <text x="595" y="216" fill="#fff" text-anchor="middle">+ ADJ 输出</text>
+    <rect x="678" y="190" width="90" height="44" rx="4" fill="#1e293b"/>
+    <text x="723" y="216" fill="#fff" text-anchor="middle">GND</text>
+    <circle cx="800" cy="212" r="8" fill="#fbbf24"/>
+    <text x="820" y="216" font-size="12" fill="#e9d5ff">指示灯</text>
+    <rect x="880" y="190" width="130" height="44" rx="4" fill="#7c3aed"/>
+    <text x="945" y="216" font-size="12" fill="#fff" text-anchor="middle">W103 电位器</text>
+    <rect x="1020" y="190" width="210" height="44" rx="4" fill="#ede9fe"/>
+    <text x="1030" y="210" font-size="11" fill="#5b21b6">可调 0.9~29.7V</text>
+    <text x="1030" y="226" font-size="10" fill="#6d28d9">逆时针↑电压 顺时针↓</text>
+  </g>
+
+  <!-- 12V 路 -->
+  <g font-size="12" font-weight="700">
+    <rect x="520" y="320" width="150" height="44" rx="4" fill="#3b82f6"/>
+    <text x="595" y="346" fill="#fff" text-anchor="middle">+ 12V 输出</text>
+    <rect x="678" y="320" width="90" height="44" rx="4" fill="#1e293b"/>
+    <text x="723" y="346" fill="#fff" text-anchor="middle">GND</text>
+    <circle cx="800" cy="342" r="8" fill="#fbbf24"/>
+    <text x="820" y="346" font-size="12" fill="#bfdbfe">指示灯</text>
+    <rect x="880" y="320" width="130" height="44" rx="4" fill="#2563eb"/>
+    <text x="945" y="346" font-size="12" fill="#fff" text-anchor="middle">固定 12V</text>
+    <rect x="1020" y="320" width="210" height="44" rx="4" fill="#dbeafe"/>
+    <text x="1030" y="340" font-size="11" fill="#1e3a8a">输出电容 33μF/25V</text>
+    <text x="1030" y="356" font-size="10" fill="#1d4ed8">最大 3.5A</text>
+  </g>
+
+  <!-- 5V 路 -->
+  <g font-size="12" font-weight="700">
+    <rect x="520" y="450" width="150" height="44" rx="4" fill="#22c55e"/>
+    <text x="595" y="476" fill="#fff" text-anchor="middle">+ 5V 输出</text>
+    <rect x="678" y="450" width="90" height="44" rx="4" fill="#1e293b"/>
+    <text x="723" y="476" fill="#fff" text-anchor="middle">GND</text>
+    <circle cx="800" cy="472" r="8" fill="#fbbf24"/>
+    <text x="820" y="476" font-size="12" fill="#bbf7d0">指示灯</text>
+    <rect x="880" y="450" width="130" height="44" rx="4" fill="#16a34a"/>
+    <text x="945" y="476" font-size="12" fill="#fff" text-anchor="middle">固定 5V</text>
+    <rect x="1020" y="450" width="210" height="44" rx="4" fill="#dcfce7"/>
+    <text x="1030" y="470" font-size="11" fill="#14532d">输出电容 100μF/10V</text>
+    <text x="1030" y="486" font-size="10" fill="#15803d">最大 3.5A</text>
+  </g>
+
+  <!-- 3.3V 路 -->
+  <g font-size="12" font-weight="700">
+    <rect x="520" y="580" width="150" height="44" rx="4" fill="#fbbf24"/>
+    <text x="595" y="606" fill="#0f172a" text-anchor="middle">+ 3.3V 输出</text>
+    <rect x="678" y="580" width="90" height="44" rx="4" fill="#1e293b"/>
+    <text x="723" y="606" fill="#fff" text-anchor="middle">GND</text>
+    <circle cx="800" cy="602" r="8" fill="#fbbf24"/>
+    <text x="820" y="606" font-size="12" fill="#fef3c7">指示灯</text>
+    <rect x="880" y="580" width="130" height="44" rx="4" fill="#f59e0b"/>
+    <text x="945" y="606" font-size="12" fill="#0f172a" text-anchor="middle">固定 3.3V</text>
+    <rect x="1020" y="580" width="210" height="44" rx="4" fill="#fef3c7"/>
+    <text x="1030" y="600" font-size="11" fill="#78350f">输出电容 100μF/10V</text>
+    <text x="1030" y="616" font-size="10" fill="#b45309">最大 3.5A</text>
+  </g>
+
+  <!-- 输出参数表 -->
+  <rect x="250" y="745" width="1000" height="140" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="270" y="770" font-size="14" font-weight="700" fill="#0f172a">输出参数表（每路独立 · 最大 3.5A 标称）</text>
+  <g font-size="12">
+    <rect x="270" y="762" width="140" height="26" rx="3" fill="#f1f5f9"/>
+    <text x="340" y="780" font-weight="700" fill="#334155" text-anchor="middle">输出路</text>
+    <rect x="410" y="762" width="160" height="26" rx="3" fill="#f1f5f9"/>
+    <text x="490" y="780" font-weight="700" fill="#334155" text-anchor="middle">输出电压</text>
+    <rect x="570" y="762" width="120" height="26" rx="3" fill="#f1f5f9"/>
+    <text x="630" y="780" font-weight="700" fill="#334155" text-anchor="middle">最大电流</text>
+    <rect x="690" y="762" width="170" height="26" rx="3" fill="#f1f5f9"/>
+    <text x="775" y="780" font-weight="700" fill="#334155" text-anchor="middle">输出电容</text>
+    <rect x="860" y="762" width="370" height="26" rx="3" fill="#f1f5f9"/>
+    <text x="1045" y="780" font-weight="700" fill="#334155" text-anchor="middle">用途建议</text>
+
+    <text x="340" y="788" fill="#1e293b" text-anchor="middle">ADJ 可调</text>
+    <text x="490" y="788" fill="#1e293b" text-anchor="middle">0.9~29.7V</text>
+    <text x="630" y="788" fill="#1e293b" text-anchor="middle">3.5A</text>
+    <text x="775" y="788" fill="#1e293b" text-anchor="middle">22μF/35V</text>
+    <text x="1045" y="788" fill="#1e293b" text-anchor="middle">自定义设备（电位器调压）</text>
+
+    <text x="340" y="812" fill="#1e293b" text-anchor="middle">12V</text>
+    <text x="490" y="812" fill="#1e293b" text-anchor="middle">固定 12V</text>
+    <text x="630" y="812" fill="#1e293b" text-anchor="middle">3.5A</text>
+    <text x="775" y="812" fill="#1e293b" text-anchor="middle">33μF/25V</text>
+    <text x="1045" y="812" fill="#1e293b" text-anchor="middle">风扇/灯带等 12V 设备</text>
+
+    <text x="340" y="836" fill="#1e293b" text-anchor="middle">5V</text>
+    <text x="490" y="836" fill="#1e293b" text-anchor="middle">固定 5V</text>
+    <text x="630" y="836" fill="#1e293b" text-anchor="middle">3.5A</text>
+    <text x="775" y="836" fill="#1e293b" text-anchor="middle">100μF/10V</text>
+    <text x="1045" y="836" fill="#1e293b" text-anchor="middle">传感器/外设供电</text>
+
+    <text x="340" y="860" fill="#1e293b" text-anchor="middle">3.3V</text>
+    <text x="490" y="860" fill="#1e293b" text-anchor="middle">固定 3.3V</text>
+    <text x="630" y="860" fill="#1e293b" text-anchor="middle">3.5A</text>
+    <text x="775" y="860" fill="#1e293b" text-anchor="middle">100μF/10V</text>
+    <text x="1045" y="860" fill="#1e293b" text-anchor="middle">主控/TFT屏供电</text>
+  </g>
+
+  <!-- 底部注意事项 -->
+  <rect x="40" y="900" width="1420" height="92" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="60" y="925" font-size="15" font-weight="700" fill="#0f172a">⚠ 注意事项</text>
+  <text x="60" y="950" font-size="12" fill="#475569">输入 6~30V 勿反接 · 本项目接 7.4V 电池 · ADJ 上电前用万用表量电压 · 四路 GND 共地 · 每路 3.5A 为标称值，实际总功率受输入电源限制，勿长期满载 · 环境温度 -25℃~+85℃</text>
+</svg>

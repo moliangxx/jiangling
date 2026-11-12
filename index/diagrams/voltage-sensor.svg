@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" font-family="Microsoft YaHei, sans-serif">
+  <defs>
+    <style>
+      .title { font-size: 20px; font-weight: bold; fill: #1a1a2e; }
+      .subtitle { font-size: 13px; fill: #666; }
+      .label { font-size: 12px; fill: #333; }
+      .pin-label { font-size: 14px; font-weight: bold; fill: #fff; text-anchor: middle; }
+      .param-title { font-size: 14px; font-weight: bold; fill: #2c3e50; }
+      .param-text { font-size: 12px; fill: #333; }
+      .warn { font-size: 11px; fill: #e74c3c; }
+    </style>
+  </defs>
+
+  <rect width="800" height="560" fill="#f8f9fa" rx="8"/>
+
+  <text x="400" y="35" text-anchor="middle" class="title">电压传感器模块（Voltage Sensor）</text>
+  <text x="400" y="55" text-anchor="middle" class="subtitle">VCC &lt; 25V · 分压比 1:5 · 3 针输出</text>
+
+  <!-- 模块本体 -->
+  <g transform="translate(130, 90)">
+    <rect x="0" y="0" width="380" height="200" fill="#1a3a5c" rx="4" stroke="#2c5f8a" stroke-width="2"/>
+
+    <!-- 左侧蓝色接线端子 -->
+    <rect x="10" y="30" width="70" height="80" fill="#2980b9" rx="3" stroke="#1f6aa5" stroke-width="1.5"/>
+    <circle cx="45" cy="48" r="8" fill="#1a5276" stroke="#5dade2" stroke-width="1"/>
+    <circle cx="45" cy="92" r="8" fill="#1a5276" stroke="#5dade2" stroke-width="1"/>
+    <text x="45" y="52" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">VCC</text>
+    <text x="45" y="96" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">GND</text>
+    <text x="45" y="130" text-anchor="middle" fill="#5dade2" font-size="9">被测电压输入</text>
+
+    <!-- 中间金螺丝孔 -->
+    <circle cx="190" cy="100" r="28" fill="#d4ac0d" stroke="#b7950b" stroke-width="2"/>
+    <circle cx="190" cy="100" r="10" fill="#f8f9fa"/>
+
+    <!-- 两个分压电阻 -->
+    <rect x="280" y="55" width="35" height="12" fill="#333" rx="1"/>
+    <text x="297" y="52" text-anchor="middle" fill="#666" font-size="8">3012 (3kΩ)</text>
+    <rect x="280" y="130" width="35" height="12" fill="#333" rx="1"/>
+    <text x="297" y="148" text-anchor="middle" fill="#666" font-size="8">7501 (750Ω)</text>
+
+    <!-- 右侧三个排针 -->
+    <rect x="340" y="45" width="25" height="30" fill="#2c3e50" rx="2"/>
+    <text x="352" y="65" class="pin-label">S</text>
+    <text x="352" y="38" text-anchor="middle" fill="#e74c3c" font-size="9" font-weight="bold">信号输出</text>
+
+    <rect x="340" y="90" width="25" height="30" fill="#2c3e50" rx="2"/>
+    <text x="352" y="110" class="pin-label">+</text>
+    <text x="352" y="83" text-anchor="middle" fill="#27ae60" font-size="9" font-weight="bold">电源正极</text>
+
+    <rect x="340" y="135" width="25" height="30" fill="#2c3e50" rx="2"/>
+    <text x="352" y="155" class="pin-label">-</text>
+    <text x="352" y="128" text-anchor="middle" fill="#7f8c8d" font-size="9" font-weight="bold">电源地</text>
+
+    <text x="190" y="25" text-anchor="middle" fill="#5dade2" font-size="13" font-weight="bold">Voltage Sensor</text>
+    <text x="190" y="195" text-anchor="middle" fill="#5dade2" font-size="13" font-weight="bold">VCC &lt; 25V</text>
+  </g>
+
+  <!-- 引脚说明 -->
+  <g transform="translate(550, 90)">
+    <rect x="0" y="0" width="210" height="200" fill="#fff" rx="6" stroke="#ddd" stroke-width="1"/>
+    <text x="105" y="25" text-anchor="middle" class="param-title">引脚说明</text>
+    <line x1="10" y1="35" x2="200" y2="35" stroke="#eee"/>
+
+    <text x="15" y="58" class="param-text" fill="#e74c3c" font-weight="bold">S</text>
+    <text x="40" y="58" class="param-text">模拟信号输出</text>
+    <text x="40" y="73" class="param-text" fill="#666">接 ADC 引脚</text>
+
+    <text x="15" y="100" class="param-text" fill="#27ae60" font-weight="bold">+</text>
+    <text x="40" y="100" class="param-text">电源正极</text>
+    <text x="40" y="115" class="param-text" fill="#666">3.3V / 5V</text>
+
+    <text x="15" y="142" class="param-text" fill="#7f8c8d" font-weight="bold">-</text>
+    <text x="40" y="142" class="param-text">电源地</text>
+    <text x="40" y="157" class="param-text" fill="#666">GND</text>
+
+    <text x="15" y="185" class="param-text" fill="#2980b9" font-weight="bold">VCC/GND</text>
+    <text x="15" y="195" class="param-text" fill="#666">蓝色端子：被测电压输入</text>
+  </g>
+
+  <!-- 参数表 -->
+  <g transform="translate(50, 320)">
+    <rect x="0" y="0" width="700" height="220" fill="#fff" rx="6" stroke="#ddd" stroke-width="1"/>
+    <text x="20" y="28" class="param-title">详细参数</text>
+
+    <text x="20" y="55" class="param-text">产品名称：</text>
+    <text x="120" y="55" class="param-text" font-weight="bold">电压传感器模块（Voltage Sensor）</text>
+
+    <text x="20" y="80" class="param-text">分压电阻：</text>
+    <text x="120" y="80" class="param-text">R1 = 3kΩ（3012），R2 = 750Ω（750Ω）</text>
+
+    <text x="20" y="105" class="param-text">分压比：</text>
+    <text x="120" y="105" class="param-text" font-weight="bold">1 : 5（被测电压缩小 5 倍后送入 ADC）</text>
+
+    <text x="20" y="130" class="param-text">检测范围：</text>
+    <text x="120" y="130" class="param-text">DC 0.02445V ~ 25V（5V 系统）/ 0 ~ 16.5V（3.3V 系统）</text>
+
+    <text x="20" y="155" class="param-text">分辨率：</text>
+    <text x="120" y="155" class="param-text">0.00489V（5V / 1023，10 位 ADC）</text>
+
+    <text x="20" y="180" class="param-text">最小检测：</text>
+    <text x="120" y="180" class="param-text">0.02445V（0.00489V × 5）</text>
+
+    <text x="20" y="205" class="param-text">输入接口：</text>
+    <text x="120" y="205" class="param-text">蓝色端子：VCC = 被测电压正极，GND = 被测电压负极</text>
+  </g>
+
+  <text x="400" y="555" text-anchor="middle" class="warn">⚠ 被测电压不要超过 16.5V（3.3V 系统），否则会损坏 ADC 引脚</text>
+</svg>

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" font-family="Microsoft YaHei, sans-serif">
+  <defs>
+    <style>
+      .title { font-size: 20px; font-weight: bold; fill: #1a1a2e; }
+      .subtitle { font-size: 13px; fill: #666; }
+      .label { font-size: 12px; fill: #333; }
+      .pin-label { font-size: 13px; font-weight: bold; fill: #fff; text-anchor: middle; }
+      .param-title { font-size: 14px; font-weight: bold; fill: #2c3e50; }
+      .param-text { font-size: 12px; fill: #333; }
+      .warn { font-size: 11px; fill: #e74c3c; }
+    </style>
+  </defs>
+
+  <rect width="800" height="560" fill="#f8f9fa" rx="8"/>
+
+  <text x="400" y="35" text-anchor="middle" class="title">TCRT5000 红外循迹传感器模块</text>
+  <text x="400" y="55" text-anchor="middle" class="subtitle">1 路循迹 · LM393 比较器 · 数字+模拟双输出</text>
+
+  <!-- 模块本体 -->
+  <g transform="translate(200, 80)">
+    <!-- PCB 板 -->
+    <rect x="0" y="40" width="300" height="50" fill="#1a1a1a" rx="3" stroke="#333" stroke-width="1"/>
+
+    <!-- 左侧排针 -->
+    <rect x="-15" y="50" width="12" height="30" fill="#2c3e50" rx="1"/>
+    <text x="-8" y="42" text-anchor="middle" fill="#e74c3c" font-size="9" font-weight="bold">AO</text>
+    <text x="-8" y="88" text-anchor="middle" fill="#27ae60" font-size="9" font-weight="bold">DO</text>
+
+    <rect x="-30" y="50" width="12" height="14" fill="#2c3e50" rx="1"/>
+    <text x="-24" y="44" text-anchor="middle" fill="#27ae60" font-size="9" font-weight="bold">GND</text>
+
+    <rect x="-30" y="66" width="12" height="14" fill="#2c3e50" rx="1"/>
+    <text x="-24" y="60" text-anchor="middle" fill="#27ae60" font-size="9" font-weight="bold">VCC</text>
+
+    <!-- LM393 芯片 -->
+    <rect x="60" y="48" width="60" height="34" fill="#222" rx="2"/>
+    <text x="90" y="68" text-anchor="middle" fill="#888" font-size="8">LM393</text>
+
+    <!-- 电位器 -->
+    <circle cx="150" cy="65" r="10" fill="#8b6914" stroke="#6b4f10" stroke-width="1.5"/>
+    <line x1="150" y1="65" x2="158" y2="58" stroke="#fff" stroke-width="1.5"/>
+    <text x="150" y="88" text-anchor="middle" fill="#888" font-size="8">灵敏度调节</text>
+
+    <!-- TCRT5000 传感器（右侧） -->
+    <rect x="220" y="30" width="70" height="70" fill="#2c2c2c" rx="3" stroke="#444" stroke-width="1.5"/>
+    <!-- 发射管（蓝色） -->
+    <circle cx="240" cy="50" r="10" fill="#2980b9" stroke="#1f6aa5" stroke-width="1.5"/>
+    <!-- 接收管（黑色） -->
+    <circle cx="270" cy="50" r="10" fill="#111" stroke="#333" stroke-width="1.5"/>
+    <text x="255" y="90" text-anchor="middle" fill="#888" font-size="8">TCRT5000</text>
+
+    <!-- M4 安装孔 -->
+    <circle cx="180" cy="65" r="6" fill="#f8f9fa" stroke="#888" stroke-width="1.5"/>
+
+    <!-- 电源指示灯 -->
+    <circle cx="120" cy="95" r="3" fill="#e74c3c"/>
+    <text x="130" y="98" fill="#888" font-size="7">电源</text>
+  </g>
+
+  <!-- 引脚说明 -->
+  <g transform="translate(550, 90)">
+    <rect x="0" y="0" width="210" height="200" fill="#fff" rx="6" stroke="#ddd" stroke-width="1"/>
+    <text x="105" y="25" text-anchor="middle" class="param-title">引脚说明</text>
+    <line x1="10" y1="35" x2="200" y2="35" stroke="#eee"/>
+
+    <text x="15" y="58" class="param-text" fill="#e74c3c" font-weight="bold">AO</text>
+    <text x="40" y="58" class="param-text">模拟信号输出</text>
+    <text x="40" y="73" class="param-text" fill="#666">电压随反射强度变化</text>
+
+    <text x="15" y="100" class="param-text" fill="#27ae60" font-weight="bold">DO</text>
+    <text x="40" y="100" class="param-text">数字开关输出</text>
+    <text x="40" y="115" class="param-text" fill="#666">0 = 检测到 / 1 = 无</text>
+
+    <text x="15" y="142" class="param-text" fill="#2980b9" font-weight="bold">VCC</text>
+    <text x="40" y="142" class="param-text">电源正极</text>
+    <text x="40" y="157" class="param-text" fill="#666">3.3V ~ 5V</text>
+
+    <text x="15" y="184" class="param-text" fill="#7f8c8d" font-weight="bold">GND</text>
+    <text x="40" y="184" class="param-text">电源地</text>
+  </g>
+
+  <!-- 参数表 -->
+  <g transform="translate(50, 320)">
+    <rect x="0" y="0" width="700" height="220" fill="#fff" rx="6" stroke="#ddd" stroke-width="1"/>
+    <text x="20" y="28" class="param-title">详细参数</text>
+
+    <text x="20" y="55" class="param-text">传感器型号：</text>
+    <text x="120" y="55" class="param-text" font-weight="bold">TCRT5000 红外反射传感器</text>
+
+    <text x="20" y="80" class="param-text">检测距离：</text>
+    <text x="120" y="80" class="param-text">1mm ~ 25mm（最佳约 1~10mm）</text>
+
+    <text x="20" y="105" class="param-text">比较器：</text>
+    <text x="120" y="105" class="param-text">LM393 宽电压比较器，信号干净，波形好</text>
+
+    <text x="20" y="130" class="param-text">工作电压：</text>
+    <text x="120" y="130" class="param-text">3.3V ~ 5V</text>
+
+    <text x="20" y="155" class="param-text">输出形式：</text>
+    <text x="120" y="155" class="param-text">数字开关量（DO：0/1）+ 模拟量（AO：电压）</text>
+
+    <text x="20" y="180" class="param-text">灵敏度调节：</text>
+    <text x="120" y="180" class="param-text">板载 10K 电位器，顺时针灵敏度提高</text>
+
+    <text x="20" y="205" class="param-text">驱动能力：</text>
+    <text x="120" y="205" class="param-text">超过 15mA，可直接接单片机 IO 口</text>
+  </g>
+
+  <text x="400" y="555" text-anchor="middle" class="warn">⚠ 循迹时模块距地面约 1~5mm，白线反射强 = 输出低电平（0），黑线 = 高电平（1）</text>
+</svg>

@@ -1,0 +1,300 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1270" viewBox="0 0 1500 1270" font-family="Microsoft YaHei, sans-serif">
+  <defs>
+    <style>
+      .t{font-size:15px;font-weight:bold;fill:#22d3ee}
+      .sub{font-size:10px;fill:#7d8fa3}
+      .bt{font-size:13px;font-weight:bold;fill:#bef264}
+      .bt2{font-size:10px;fill:#8fae5a}
+      .pin{font-size:9px;font-weight:bold;fill:#e6edf3}
+      .c1{font-size:10px;font-weight:bold;fill:#f8fafc}
+      .c2{font-size:8px;fill:#9fb3c8}
+      .note{font-size:9px;fill:#93a8bd}
+      .lg{font-size:10px;fill:#c3d2e0}
+      .ncx{font-size:14px;font-weight:bold;fill:#9ca3af}
+    </style>
+  </defs>
+  <rect width="1500" height="1270" fill="#0b111a"/>
+  <text x="750" y="34" class="t" text-anchor="middle">TB6612FNG 电机驱动 · 逐脚接线图（两片同构）</text>
+  <text x="750" y="52" class="sub" text-anchor="middle">上排 VM / VCC / GND / AO1 / AO2 / BO2 / BO1 / GND　·　下排 PWMA / AIN2 / AIN1 / STBY / BIN1 / BIN2 / PWMB / GND　（按模块丝印顺序）</text>
+  <rect x="120" y="78" width="460" height="150" rx="8" fill="#0c1420" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="136" y="102" class="bt" fill="#67e8f9">图例</text>
+  <circle cx="146" cy="132" r="5" fill="#f472b6"/>
+  <text x="160" y="136" class="lg">电源（VM / VCC）</text>
+  <circle cx="146" cy="158" r="5" fill="#4ade80"/>
+  <text x="160" y="162" class="lg">地（GND）</text>
+  <circle cx="146" cy="184" r="5" fill="#a3e635"/>
+  <text x="160" y="188" class="lg">电机输出（AO1 / AO2）</text>
+  <circle cx="336" cy="132" r="5" fill="#22d3ee"/>
+  <text x="350" y="136" class="lg">控制信号（GPIO）</text>
+  <circle cx="336" cy="158" r="5" fill="#6b7280"/>
+  <text x="350" y="162" class="lg">不接 / 悬空（B 通道）</text>
+  <text x="136" y="218" class="note">每片 16 脚（上排 8 + 下排 8）· 两片同构 · #1 左侧 / #2 右侧</text>
+  <rect x="620" y="78" width="390" height="150" rx="8" fill="#12180d" stroke="#a3e635" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="636" y="100" class="bt" font-size="11">AO1 / AO2 → 同侧两电机并联</text>
+  <text x="636" y="118" class="note">M1 = 左前　M2 = 左后　·　同名端接同一母线，极性必须一致</text>
+  <line x1="660" y1="248" x2="660" y2="146" stroke="#a3e635" stroke-width="2"/>
+  <line x1="660" y1="146" x2="817" y2="146" stroke="#a3e635" stroke-width="2"/>
+  <line x1="660" y1="190" x2="817" y2="190" stroke="#a3e635" stroke-width="2"/>
+  <line x1="800" y1="248" x2="800" y2="220" stroke="#a3e635" stroke-width="2"/>
+  <line x1="800" y1="220" x2="940" y2="220" stroke="#a3e635" stroke-width="2"/>
+  <line x1="940" y1="220" x2="940" y2="146" stroke="#a3e635" stroke-width="2"/>
+  <line x1="843" y1="146" x2="940" y2="146" stroke="#a3e635" stroke-width="2"/>
+  <line x1="843" y1="190" x2="940" y2="190" stroke="#a3e635" stroke-width="2"/>
+  <circle cx="830" cy="146" r="13" fill="#0b111a" stroke="#a3e635" stroke-width="1.6"/>
+  <text x="830" y="149" class="c1" text-anchor="middle">M1</text>
+  <circle cx="830" cy="190" r="13" fill="#0b111a" stroke="#a3e635" stroke-width="1.6"/>
+  <text x="830" y="193" class="c1" text-anchor="middle">M2</text>
+  <text x="668" y="210" class="c2" font-size="9">AO1</text>
+  <text x="932" y="210" class="c2" font-size="9" text-anchor="end">AO2</text>
+  <rect x="120" y="335" width="1200" height="120" rx="8" fill="#141a10" stroke="#a3e635" stroke-width="1.6"/>
+  <text x="140" y="375" class="bt">左侧（左前 + 左后）</text>
+  <text x="750" y="395" class="bt" text-anchor="middle" font-size="12">TB6612FNG 模块 #1</text>
+  <text x="750" y="417" class="bt2" text-anchor="middle">2 通道 · 单通道 1.2 A 持续 / 3.2 A 峰值 · 本车只用 A 通道</text>
+  <circle cx="240" cy="335" r="4.5" fill="#f472b6"/>
+  <text x="240" y="359" class="pin" text-anchor="middle">VM</text>
+  <circle cx="380" cy="335" r="4.5" fill="#f472b6"/>
+  <text x="380" y="359" class="pin" text-anchor="middle">VCC</text>
+  <circle cx="520" cy="335" r="4.5" fill="#4ade80"/>
+  <text x="520" y="359" class="pin" text-anchor="middle">GND</text>
+  <circle cx="660" cy="335" r="4.5" fill="#a3e635"/>
+  <text x="660" y="359" class="pin" text-anchor="middle">AO1</text>
+  <circle cx="800" cy="335" r="4.5" fill="#a3e635"/>
+  <text x="800" y="359" class="pin" text-anchor="middle">AO2</text>
+  <circle cx="940" cy="335" r="4.5" fill="#6b7280"/>
+  <text x="940" y="359" class="pin" text-anchor="middle">BO2</text>
+  <circle cx="1080" cy="335" r="4.5" fill="#6b7280"/>
+  <text x="1080" y="359" class="pin" text-anchor="middle">BO1</text>
+  <circle cx="1220" cy="335" r="4.5" fill="#4ade80"/>
+  <text x="1220" y="359" class="pin" text-anchor="middle">GND</text>
+  <circle cx="240" cy="455" r="4.5" fill="#22d3ee"/>
+  <text x="240" y="445" class="pin" text-anchor="middle">PWMA</text>
+  <circle cx="380" cy="455" r="4.5" fill="#22d3ee"/>
+  <text x="380" y="445" class="pin" text-anchor="middle">AIN2</text>
+  <circle cx="520" cy="455" r="4.5" fill="#22d3ee"/>
+  <text x="520" y="445" class="pin" text-anchor="middle">AIN1</text>
+  <circle cx="660" cy="455" r="4.5" fill="#22d3ee"/>
+  <text x="660" y="445" class="pin" text-anchor="middle">STBY</text>
+  <circle cx="800" cy="455" r="4.5" fill="#6b7280"/>
+  <text x="800" y="445" class="pin" text-anchor="middle">BIN1</text>
+  <circle cx="940" cy="455" r="4.5" fill="#6b7280"/>
+  <text x="940" y="445" class="pin" text-anchor="middle">BIN2</text>
+  <circle cx="1080" cy="455" r="4.5" fill="#6b7280"/>
+  <text x="1080" y="445" class="pin" text-anchor="middle">PWMB</text>
+  <circle cx="1220" cy="455" r="4.5" fill="#4ade80"/>
+  <text x="1220" y="445" class="pin" text-anchor="middle">GND</text>
+  <line x1="240" y1="335" x2="240" y2="292" stroke="#f472b6" stroke-width="2"/>
+  <rect x="180" y="248" width="120" height="44" rx="6" fill="#0c1420" stroke="#f472b6" stroke-width="1.3"/>
+  <text x="240" y="267" class="c1" text-anchor="middle">电池正极</text>
+  <text x="240" y="283" class="c2" text-anchor="middle">6 ~ 8.4 V</text>
+  <line x1="380" y1="335" x2="380" y2="292" stroke="#f472b6" stroke-width="2"/>
+  <rect x="320" y="248" width="120" height="44" rx="6" fill="#0c1420" stroke="#f472b6" stroke-width="1.3"/>
+  <text x="380" y="267" class="c1" text-anchor="middle">3V3</text>
+  <text x="380" y="283" class="c2" text-anchor="middle">逻辑电源</text>
+  <line x1="520" y1="335" x2="520" y2="292" stroke="#4ade80" stroke-width="2"/>
+  <rect x="460" y="248" width="120" height="44" rx="6" fill="#0c1420" stroke="#4ade80" stroke-width="1.3"/>
+  <text x="520" y="267" class="c1" text-anchor="middle">公共地</text>
+  <text x="520" y="283" class="c2" text-anchor="middle">主板 GND</text>
+  <line x1="660" y1="335" x2="660" y2="292" stroke="#a3e635" stroke-width="2"/>
+  <rect x="600" y="248" width="120" height="44" rx="6" fill="#0c1420" stroke="#a3e635" stroke-width="1.3"/>
+  <text x="660" y="267" class="c1" text-anchor="middle">左前+左后</text>
+  <text x="660" y="283" class="c2" text-anchor="middle">接 AO1 母线</text>
+  <line x1="800" y1="335" x2="800" y2="292" stroke="#a3e635" stroke-width="2"/>
+  <rect x="740" y="248" width="120" height="44" rx="6" fill="#0c1420" stroke="#a3e635" stroke-width="1.3"/>
+  <text x="800" y="267" class="c1" text-anchor="middle">左前+左后</text>
+  <text x="800" y="283" class="c2" text-anchor="middle">接 AO2 母线</text>
+  <line x1="940" y1="335" x2="940" y2="292" stroke="#6b7280" stroke-width="2"/>
+  <rect x="880" y="248" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="896" y="276" class="ncx" text-anchor="middle">×</text>
+  <text x="950" y="267" class="c1" text-anchor="middle">不接</text>
+  <text x="950" y="283" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="1080" y1="335" x2="1080" y2="292" stroke="#6b7280" stroke-width="2"/>
+  <rect x="1020" y="248" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="1036" y="276" class="ncx" text-anchor="middle">×</text>
+  <text x="1090" y="267" class="c1" text-anchor="middle">不接</text>
+  <text x="1090" y="283" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="1220" y1="335" x2="1220" y2="292" stroke="#4ade80" stroke-width="2"/>
+  <rect x="1160" y="248" width="120" height="44" rx="6" fill="#0c1420" stroke="#4ade80" stroke-width="1.3"/>
+  <text x="1220" y="267" class="c1" text-anchor="middle">公共地</text>
+  <text x="1220" y="283" class="c2" text-anchor="middle">电池负极</text>
+  <line x1="240" y1="455" x2="240" y2="485" stroke="#22d3ee" stroke-width="2"/>
+  <rect x="180" y="485" width="120" height="44" rx="6" fill="#0c1420" stroke="#22d3ee" stroke-width="1.3"/>
+  <text x="240" y="504" class="c1" text-anchor="middle">GPIO1</text>
+  <text x="240" y="520" class="c2" text-anchor="middle">PWM 20 kHz</text>
+  <line x1="380" y1="455" x2="380" y2="485" stroke="#22d3ee" stroke-width="2"/>
+  <rect x="320" y="485" width="120" height="44" rx="6" fill="#0c1420" stroke="#22d3ee" stroke-width="1.3"/>
+  <text x="380" y="504" class="c1" text-anchor="middle">GPIO42</text>
+  <text x="380" y="520" class="c2" text-anchor="middle">方向位 2</text>
+  <line x1="520" y1="455" x2="520" y2="485" stroke="#22d3ee" stroke-width="2"/>
+  <rect x="460" y="485" width="120" height="44" rx="6" fill="#0c1420" stroke="#22d3ee" stroke-width="1.3"/>
+  <text x="520" y="504" class="c1" text-anchor="middle">GPIO2</text>
+  <text x="520" y="520" class="c2" text-anchor="middle">方向位 1</text>
+  <line x1="660" y1="455" x2="660" y2="485" stroke="#22d3ee" stroke-width="2"/>
+  <rect x="600" y="485" width="120" height="44" rx="6" fill="#0c1420" stroke="#22d3ee" stroke-width="1.3"/>
+  <text x="660" y="504" class="c1" text-anchor="middle">GPIO41</text>
+  <text x="660" y="520" class="c2" text-anchor="middle">高电平使能</text>
+  <line x1="800" y1="455" x2="800" y2="485" stroke="#6b7280" stroke-width="2"/>
+  <rect x="740" y="485" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="800" y="504" class="c1" text-anchor="middle">GND</text>
+  <text x="800" y="520" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="940" y1="455" x2="940" y2="485" stroke="#6b7280" stroke-width="2"/>
+  <rect x="880" y="485" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="940" y="504" class="c1" text-anchor="middle">GND</text>
+  <text x="940" y="520" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="1080" y1="455" x2="1080" y2="485" stroke="#6b7280" stroke-width="2"/>
+  <rect x="1020" y="485" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="1080" y="504" class="c1" text-anchor="middle">GND</text>
+  <text x="1080" y="520" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="1220" y1="455" x2="1220" y2="485" stroke="#4ade80" stroke-width="2"/>
+  <rect x="1160" y="485" width="120" height="44" rx="6" fill="#0c1420" stroke="#4ade80" stroke-width="1.3"/>
+  <text x="1220" y="504" class="c1" text-anchor="middle">公共地</text>
+  <text x="1220" y="520" class="c2" text-anchor="middle">同一接地点</text>
+  <rect x="620" y="598" width="390" height="150" rx="8" fill="#12180d" stroke="#a3e635" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="636" y="620" class="bt" font-size="11">AO1 / AO2 → 同侧两电机并联</text>
+  <text x="636" y="638" class="note">M1 = 右前　M2 = 右后　·　同名端接同一母线，极性必须一致</text>
+  <line x1="660" y1="768" x2="660" y2="666" stroke="#a3e635" stroke-width="2"/>
+  <line x1="660" y1="666" x2="817" y2="666" stroke="#a3e635" stroke-width="2"/>
+  <line x1="660" y1="710" x2="817" y2="710" stroke="#a3e635" stroke-width="2"/>
+  <line x1="800" y1="768" x2="800" y2="740" stroke="#a3e635" stroke-width="2"/>
+  <line x1="800" y1="740" x2="940" y2="740" stroke="#a3e635" stroke-width="2"/>
+  <line x1="940" y1="740" x2="940" y2="666" stroke="#a3e635" stroke-width="2"/>
+  <line x1="843" y1="666" x2="940" y2="666" stroke="#a3e635" stroke-width="2"/>
+  <line x1="843" y1="710" x2="940" y2="710" stroke="#a3e635" stroke-width="2"/>
+  <circle cx="830" cy="666" r="13" fill="#0b111a" stroke="#a3e635" stroke-width="1.6"/>
+  <text x="830" y="669" class="c1" text-anchor="middle">M1</text>
+  <circle cx="830" cy="710" r="13" fill="#0b111a" stroke="#a3e635" stroke-width="1.6"/>
+  <text x="830" y="713" class="c1" text-anchor="middle">M2</text>
+  <text x="668" y="730" class="c2" font-size="9">AO1</text>
+  <text x="932" y="730" class="c2" font-size="9" text-anchor="end">AO2</text>
+  <rect x="120" y="855" width="1200" height="120" rx="8" fill="#141a10" stroke="#a3e635" stroke-width="1.6"/>
+  <text x="140" y="895" class="bt">右侧（右前 + 右后）</text>
+  <text x="750" y="915" class="bt" text-anchor="middle" font-size="12">TB6612FNG 模块 #2</text>
+  <text x="750" y="937" class="bt2" text-anchor="middle">2 通道 · 单通道 1.2 A 持续 / 3.2 A 峰值 · 本车只用 A 通道</text>
+  <circle cx="240" cy="855" r="4.5" fill="#f472b6"/>
+  <text x="240" y="879" class="pin" text-anchor="middle">VM</text>
+  <circle cx="380" cy="855" r="4.5" fill="#f472b6"/>
+  <text x="380" y="879" class="pin" text-anchor="middle">VCC</text>
+  <circle cx="520" cy="855" r="4.5" fill="#4ade80"/>
+  <text x="520" y="879" class="pin" text-anchor="middle">GND</text>
+  <circle cx="660" cy="855" r="4.5" fill="#a3e635"/>
+  <text x="660" y="879" class="pin" text-anchor="middle">AO1</text>
+  <circle cx="800" cy="855" r="4.5" fill="#a3e635"/>
+  <text x="800" y="879" class="pin" text-anchor="middle">AO2</text>
+  <circle cx="940" cy="855" r="4.5" fill="#6b7280"/>
+  <text x="940" y="879" class="pin" text-anchor="middle">BO2</text>
+  <circle cx="1080" cy="855" r="4.5" fill="#6b7280"/>
+  <text x="1080" y="879" class="pin" text-anchor="middle">BO1</text>
+  <circle cx="1220" cy="855" r="4.5" fill="#4ade80"/>
+  <text x="1220" y="879" class="pin" text-anchor="middle">GND</text>
+  <circle cx="240" cy="975" r="4.5" fill="#22d3ee"/>
+  <text x="240" y="965" class="pin" text-anchor="middle">PWMA</text>
+  <circle cx="380" cy="975" r="4.5" fill="#22d3ee"/>
+  <text x="380" y="965" class="pin" text-anchor="middle">AIN2</text>
+  <circle cx="520" cy="975" r="4.5" fill="#22d3ee"/>
+  <text x="520" y="965" class="pin" text-anchor="middle">AIN1</text>
+  <circle cx="660" cy="975" r="4.5" fill="#22d3ee"/>
+  <text x="660" y="965" class="pin" text-anchor="middle">STBY</text>
+  <circle cx="800" cy="975" r="4.5" fill="#6b7280"/>
+  <text x="800" y="965" class="pin" text-anchor="middle">BIN1</text>
+  <circle cx="940" cy="975" r="4.5" fill="#6b7280"/>
+  <text x="940" y="965" class="pin" text-anchor="middle">BIN2</text>
+  <circle cx="1080" cy="975" r="4.5" fill="#6b7280"/>
+  <text x="1080" y="965" class="pin" text-anchor="middle">PWMB</text>
+  <circle cx="1220" cy="975" r="4.5" fill="#4ade80"/>
+  <text x="1220" y="965" class="pin" text-anchor="middle">GND</text>
+  <line x1="240" y1="855" x2="240" y2="812" stroke="#f472b6" stroke-width="2"/>
+  <rect x="180" y="768" width="120" height="44" rx="6" fill="#0c1420" stroke="#f472b6" stroke-width="1.3"/>
+  <text x="240" y="787" class="c1" text-anchor="middle">电池正极</text>
+  <text x="240" y="803" class="c2" text-anchor="middle">6 ~ 8.4 V</text>
+  <line x1="380" y1="855" x2="380" y2="812" stroke="#f472b6" stroke-width="2"/>
+  <rect x="320" y="768" width="120" height="44" rx="6" fill="#0c1420" stroke="#f472b6" stroke-width="1.3"/>
+  <text x="380" y="787" class="c1" text-anchor="middle">3V3</text>
+  <text x="380" y="803" class="c2" text-anchor="middle">逻辑电源</text>
+  <line x1="520" y1="855" x2="520" y2="812" stroke="#4ade80" stroke-width="2"/>
+  <rect x="460" y="768" width="120" height="44" rx="6" fill="#0c1420" stroke="#4ade80" stroke-width="1.3"/>
+  <text x="520" y="787" class="c1" text-anchor="middle">公共地</text>
+  <text x="520" y="803" class="c2" text-anchor="middle">主板 GND</text>
+  <line x1="660" y1="855" x2="660" y2="812" stroke="#a3e635" stroke-width="2"/>
+  <rect x="600" y="768" width="120" height="44" rx="6" fill="#0c1420" stroke="#a3e635" stroke-width="1.3"/>
+  <text x="660" y="787" class="c1" text-anchor="middle">右前+右后</text>
+  <text x="660" y="803" class="c2" text-anchor="middle">接 AO1 母线</text>
+  <line x1="800" y1="855" x2="800" y2="812" stroke="#a3e635" stroke-width="2"/>
+  <rect x="740" y="768" width="120" height="44" rx="6" fill="#0c1420" stroke="#a3e635" stroke-width="1.3"/>
+  <text x="800" y="787" class="c1" text-anchor="middle">右前+右后</text>
+  <text x="800" y="803" class="c2" text-anchor="middle">接 AO2 母线</text>
+  <line x1="940" y1="855" x2="940" y2="812" stroke="#6b7280" stroke-width="2"/>
+  <rect x="880" y="768" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="896" y="796" class="ncx" text-anchor="middle">×</text>
+  <text x="950" y="787" class="c1" text-anchor="middle">不接</text>
+  <text x="950" y="803" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="1080" y1="855" x2="1080" y2="812" stroke="#6b7280" stroke-width="2"/>
+  <rect x="1020" y="768" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="1036" y="796" class="ncx" text-anchor="middle">×</text>
+  <text x="1090" y="787" class="c1" text-anchor="middle">不接</text>
+  <text x="1090" y="803" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="1220" y1="855" x2="1220" y2="812" stroke="#4ade80" stroke-width="2"/>
+  <rect x="1160" y="768" width="120" height="44" rx="6" fill="#0c1420" stroke="#4ade80" stroke-width="1.3"/>
+  <text x="1220" y="787" class="c1" text-anchor="middle">公共地</text>
+  <text x="1220" y="803" class="c2" text-anchor="middle">电池负极</text>
+  <line x1="240" y1="975" x2="240" y2="1005" stroke="#22d3ee" stroke-width="2"/>
+  <rect x="180" y="1005" width="120" height="44" rx="6" fill="#0c1420" stroke="#22d3ee" stroke-width="1.3"/>
+  <text x="240" y="1024" class="c1" text-anchor="middle">GPIO40</text>
+  <text x="240" y="1040" class="c2" text-anchor="middle">PWM 20 kHz</text>
+  <line x1="380" y1="975" x2="380" y2="1005" stroke="#22d3ee" stroke-width="2"/>
+  <rect x="320" y="1005" width="120" height="44" rx="6" fill="#0c1420" stroke="#22d3ee" stroke-width="1.3"/>
+  <text x="380" y="1024" class="c1" text-anchor="middle">GPIO38</text>
+  <text x="380" y="1040" class="c2" text-anchor="middle">方向位 2</text>
+  <line x1="520" y1="975" x2="520" y2="1005" stroke="#22d3ee" stroke-width="2"/>
+  <rect x="460" y="1005" width="120" height="44" rx="6" fill="#0c1420" stroke="#22d3ee" stroke-width="1.3"/>
+  <text x="520" y="1024" class="c1" text-anchor="middle">GPIO39</text>
+  <text x="520" y="1040" class="c2" text-anchor="middle">方向位 1</text>
+  <line x1="660" y1="975" x2="660" y2="1005" stroke="#22d3ee" stroke-width="2"/>
+  <rect x="600" y="1005" width="120" height="44" rx="6" fill="#0c1420" stroke="#22d3ee" stroke-width="1.3"/>
+  <text x="660" y="1024" class="c1" text-anchor="middle">GPIO47</text>
+  <text x="660" y="1040" class="c2" text-anchor="middle">高电平使能</text>
+  <line x1="800" y1="975" x2="800" y2="1005" stroke="#6b7280" stroke-width="2"/>
+  <rect x="740" y="1005" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="800" y="1024" class="c1" text-anchor="middle">GND</text>
+  <text x="800" y="1040" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="940" y1="975" x2="940" y2="1005" stroke="#6b7280" stroke-width="2"/>
+  <rect x="880" y="1005" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="940" y="1024" class="c1" text-anchor="middle">GND</text>
+  <text x="940" y="1040" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="1080" y1="975" x2="1080" y2="1005" stroke="#6b7280" stroke-width="2"/>
+  <rect x="1020" y="1005" width="120" height="44" rx="6" fill="#101822" stroke="#6b7280" stroke-width="1.3"/>
+  <text x="1080" y="1024" class="c1" text-anchor="middle">GND</text>
+  <text x="1080" y="1040" class="c2" text-anchor="middle">B 通道不用</text>
+  <line x1="1220" y1="975" x2="1220" y2="1005" stroke="#4ade80" stroke-width="2"/>
+  <rect x="1160" y="1005" width="120" height="44" rx="6" fill="#0c1420" stroke="#4ade80" stroke-width="1.3"/>
+  <text x="1220" y="1024" class="c1" text-anchor="middle">公共地</text>
+  <text x="1220" y="1040" class="c2" text-anchor="middle">同一接地点</text>
+  <rect x="120" y="1070" width="620" height="170" rx="8" fill="#0c1420" stroke="#22d3ee" stroke-width="1.2"/>
+  <text x="136" y="1098" class="bt" fill="#67e8f9">方向与调速逻辑（每片独立）</text>
+  <text x="150" y="1126" class="c1">AIN1</text>
+  <text x="222" y="1126" class="c1">AIN2</text>
+  <text x="300" y="1126" class="c1">结果</text>
+  <line x1="140" y1="1132" x2="404" y2="1132" stroke="#22d3ee" stroke-width="1" opacity="0.5"/>
+  <text x="156" y="1154" class="c2" font-size="10">1</text>
+  <text x="228" y="1154" class="c2" font-size="10">0</text>
+  <text x="300" y="1154" class="c2" font-size="10">正转（占空比 = 转速）</text>
+  <text x="156" y="1176" class="c2" font-size="10">0</text>
+  <text x="228" y="1176" class="c2" font-size="10">1</text>
+  <text x="300" y="1176" class="c2" font-size="10">反转</text>
+  <text x="156" y="1198" class="c2" font-size="10">0</text>
+  <text x="228" y="1198" class="c2" font-size="10">0</text>
+  <text x="300" y="1198" class="c2" font-size="10">停止（两输出低，滑行）</text>
+  <text x="156" y="1220" class="c2" font-size="10">1</text>
+  <text x="228" y="1220" class="c2" font-size="10">1</text>
+  <text x="300" y="1220" class="c2" font-size="10">停止（短路制动）</text>
+  <text x="470" y="1154" class="c2" font-size="10">PWMA 占空比 0 ~ 100% → 转速</text>
+  <text x="470" y="1176" class="c2" font-size="10">STBY=0 → 整片输出高阻（休眠）</text>
+  <text x="470" y="1198" class="c2" font-size="10">转向只看 AIN1/AIN2，与占空比无关</text>
+  <rect x="770" y="1070" width="610" height="170" rx="8" fill="#12180d" stroke="#a3e635" stroke-width="1.2"/>
+  <text x="786" y="1098" class="bt">接线与转向要点</text>
+  <text x="786" y="1120" class="c2" font-size="10">差速转向：左片 #1 与右片 #2 各给不同占空比，同侧两轮永远同速</text>
+  <text x="786" y="1142" class="c2" font-size="10">每侧 2 只电机在 AO1/AO2 上负载并联，不是两路输出并联</text>
+  <text x="786" y="1164" class="c2" font-size="10">单只电机转向反：只对调它自己的两根线；两只都反才换 AO1/AO2</text>
+  <text x="786" y="1186" class="c2" font-size="10">BIN1 / BIN2 / PWMB 接地、BO1 / BO2 悬空：B 通道不参与驱动</text>
+  <text x="786" y="1208" class="c2" font-size="10">VM 与 GND 之间并 100 µF + 0.1 µF，尽量靠近模块</text>
+  <text x="786" y="1230" class="c2" font-size="10">上电顺序：STBY 低 → 定方向电平 → PWM 0 → 拉高 STBY</text>
+  <text x="750" y="1262" class="sub" text-anchor="middle">引脚顺序按 TB6612FNG 模块丝印排列：上排 VM VCC GND AO1 AO2 BO2 BO1 GND　下排 PWMA AIN2 AIN1 STBY BIN1 BIN2 PWMB GND</text>
+</svg>

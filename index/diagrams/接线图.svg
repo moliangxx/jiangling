@@ -1,0 +1,307 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1080" viewBox="0 0 1440 1080" font-family="Microsoft YaHei, sans-serif">
+  <defs>
+    <style>
+      .title{font-size:16px;font-weight:bold}
+      .sub{font-size:10px;fill:#7d8fa3}
+      .zone{font-size:12px;font-weight:bold}
+      .name{font-size:9px;font-weight:bold}
+      .pin{font-size:8.5px;fill:#a9bccd}
+      .tag{font-size:8px;fill:#93a8bd}
+      .num{font-size:10px;fill:#e6edf3;font-weight:bold}
+      .off{font-size:8px;fill:#5c7080}
+      .note{font-size:8.5px;fill:#7d8fa3}
+      .gpio{font-size:8px;font-weight:bold;fill:#cfe3f2}
+    </style>
+  </defs>
+
+  <rect width="1440" height="1080" fill="#0b111a"/>
+  <text x="720" y="30" class="title" fill="#22d3ee" text-anchor="middle">ESP32-JiangLing 智能小车 · 接线总图</text>
+  <text x="720" y="50" class="sub" text-anchor="middle">按开发板物理排针分两侧：左侧 = 显示 / 音频 / 传感器　·　右侧 = 两片 TB6612 的 8 条信号　·　标注一律用 GPIO 编号</text>
+
+  <!-- ===================== 供电区 ===================== -->
+  <rect x="28" y="68" width="396" height="140" rx="8" fill="#1d1220" stroke="#f472b6" stroke-width="1.2" stroke-dasharray="6 5"/>
+  <text x="42" y="90" class="zone" fill="#f472b6">供电区</text>
+  <rect x="40" y="98" width="368" height="100" rx="6" fill="#170e1b" stroke="#f472b6" stroke-width="1.5"/>
+  <text x="54" y="118" class="name" fill="#f9a8d4">DC93512 降压 V2.0</text>
+  <text x="54" y="132" class="tag">电池输入 · 三路输出，互不并联</text>
+  <circle cx="60" cy="150" r="3.5" fill="#f472b6"/>
+  <text x="72" y="153" class="pin">5V → 主板 5V 脚 + 音频 VCC</text>
+  <circle cx="60" cy="168" r="3.5" fill="#2dd4bf"/>
+  <text x="72" y="171" class="pin">3.3V → 测速模块 VCC（电压检测无供电脚）</text>
+  <circle cx="60" cy="186" r="3.5" fill="#f472b6"/>
+  <text x="72" y="189" class="pin">原始电压（直通）→ TB6612 VM + 电压取样</text>
+
+  <!-- ===================== 音频区（左侧排针 GPIO4~GPIO7） ===================== -->
+  <rect x="28" y="216" width="396" height="168" rx="8" fill="#241a0c" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="6 5"/>
+  <text x="42" y="238" class="zone" fill="#fbbf24">音频区 · GPIO4 / 5 / 6 / 7</text>
+  <rect x="40" y="246" width="368" height="130" rx="6" fill="#1c1408" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="54" y="264" class="name" fill="#fde68a">MAX98357A + INMP441 一体模块</text>
+  <text x="396" y="264" class="tag" fill="#f9a8d4" text-anchor="end">VCC ◄ OUT2 5V · CLK 悬空</text>
+
+  <circle cx="408" cy="272" r="4" fill="#fbbf24"/>
+  <text x="54" y="275" class="pin">BCLK（位时钟）</text>
+  <text x="394" y="275" class="gpio" text-anchor="end">GPIO4</text>
+  <circle cx="408" cy="304" r="4" fill="#fbbf24"/>
+  <text x="54" y="307" class="pin">LRCLK（字时钟）</text>
+  <text x="394" y="307" class="gpio" text-anchor="end">GPIO5</text>
+  <circle cx="408" cy="336" r="4" fill="#fbbf24"/>
+  <text x="54" y="339" class="pin">SDA（功放数据输入）</text>
+  <text x="394" y="339" class="gpio" text-anchor="end">GPIO6</text>
+  <circle cx="408" cy="368" r="4" fill="#fbbf24"/>
+  <text x="54" y="371" class="pin">DATA（麦克风数据输出）</text>
+  <text x="394" y="371" class="gpio" text-anchor="end">GPIO7</text>
+
+  <!-- ===================== 传感器区（左侧排针 GPIO15、GPIO8） ===================== -->
+  <rect x="28" y="392" width="396" height="164" rx="8" fill="#0a2220" stroke="#2dd4bf" stroke-width="1.2" stroke-dasharray="6 5"/>
+  <rect x="40" y="392" width="368" height="148" rx="6" fill="#07201d" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="54" y="424" class="name" fill="#5eead4">传感器区 · 电压检测 + 单侧测速</text>
+  <text x="396" y="424" class="tag" fill="#7dd3c7" text-anchor="end">SENSOR_ENABLE 默认 0</text>
+
+  <circle cx="408" cy="400" r="4" fill="#2dd4bf"/>
+  <text x="54" y="403" class="pin">OUT 测速（只装左后轮）</text>
+  <text x="394" y="403" class="gpio" text-anchor="end">GPIO15</text>
+
+  <text x="54" y="448" class="tag" fill="#7dd3c7">电压取样 = 电池原始电压；3 针 + 不可接 3.3V</text>
+  <text x="54" y="466" class="tag" fill="#7dd3c7">5:1 分压（3kΩ / 750Ω）· 8 点滑动平均</text>
+  <text x="54" y="484" class="tag" fill="#7dd3c7">测速 20 脉冲/转（待实测）· VCC 接 3.3V</text>
+  <text x="54" y="502" class="tag" fill="#7dd3c7">右轮不装，DAT_WHEEL 右轮报 0xFFFF</text>
+  <text x="54" y="520" class="tag" fill="#7dd3c7">关闭时 DAT_BAT 固定 6.80 V、左轮 0</text>
+
+  <circle cx="408" cy="528" r="4" fill="#2dd4bf"/>
+  <text x="54" y="531" class="pin">S 电压检测（ADC1_CH7）</text>
+  <text x="394" y="531" class="gpio" text-anchor="end">GPIO8</text>
+
+  <!-- ===================== 显示区（左侧排针 GPIO9~GPIO14） ===================== -->
+  <rect x="28" y="568" width="396" height="308" rx="8" fill="#0e1a2e" stroke="#60a5fa" stroke-width="1.2" stroke-dasharray="6 5"/>
+  <text x="42" y="590" class="zone" fill="#60a5fa">显示区 · GPIO9 ~ GPIO14</text>
+  <rect x="40" y="598" width="368" height="266" rx="6" fill="#0b1526" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="54" y="618" class="name" fill="#bfdbfe">ST7789 2.4″ TFT · 240×320</text>
+  <text x="396" y="618" class="tag" fill="#f9a8d4" text-anchor="end">VCC ◄ 主控 3V3 脚</text>
+
+  <circle cx="408" cy="624" r="4" fill="#60a5fa"/>
+  <text x="54" y="627" class="pin">BLK（背光，高亮）</text>
+  <text x="394" y="627" class="gpio" text-anchor="end">GPIO9</text>
+  <circle cx="408" cy="656" r="4" fill="#60a5fa"/>
+  <text x="54" y="659" class="pin">CS（片选，低有效）</text>
+  <text x="394" y="659" class="gpio" text-anchor="end">GPIO10</text>
+  <circle cx="408" cy="688" r="4" fill="#60a5fa"/>
+  <text x="54" y="691" class="pin">SDA（MOSI，只写不读）</text>
+  <text x="394" y="691" class="gpio" text-anchor="end">GPIO11</text>
+  <circle cx="408" cy="720" r="4" fill="#60a5fa"/>
+  <text x="54" y="723" class="pin">SCLK（SPI 时钟）</text>
+  <text x="394" y="723" class="gpio" text-anchor="end">GPIO12</text>
+  <circle cx="408" cy="752" r="4" fill="#60a5fa"/>
+  <text x="54" y="755" class="pin">DC（数据 / 命令）</text>
+  <text x="394" y="755" class="gpio" text-anchor="end">GPIO13</text>
+  <circle cx="408" cy="784" r="4" fill="#60a5fa"/>
+  <text x="54" y="787" class="pin">RESET（低有效）</text>
+  <text x="394" y="787" class="gpio" text-anchor="end">GPIO14</text>
+
+  <text x="54" y="816" class="tag" fill="#7dd3fc">6 根信号线是连续 6 个排针位，可一根 6P 排线一次插完</text>
+  <text x="54" y="834" class="tag" fill="#7dd3fc">9/10/11/12 为 FSPI 原生 HD / CS0 / D / CLK，走 IOMUX</text>
+  <text x="54" y="852" class="tag" fill="#7dd3fc">GND 公共地；切勿把 VCC 接到 5V</text>
+
+  <!-- ===================== 主控 ===================== -->
+  <rect x="452" y="68" width="508" height="832" rx="8" fill="#0c1c26" stroke="#22d3ee" stroke-width="1.5"/>
+  <text x="706" y="100" class="zone" fill="#22d3ee" text-anchor="middle">主控</text>
+  <text x="706" y="120" class="sub" text-anchor="middle">ESP32-S3 DevKitC-1 · N16R8　（正对板面、USB 朝下：左、右各一排针；数字即 GPIO 编号）</text>
+
+  <rect x="480" y="148" width="452" height="728" rx="6" fill="#081821" stroke="#22d3ee" stroke-width="1.2"/>
+  <text x="492" y="140" class="tag" fill="#67e8f9">左侧排针 ▼</text>
+  <text x="920" y="140" class="tag" fill="#67e8f9" text-anchor="end">▼ 右侧排针</text>
+
+  <!-- 左侧排针：逐脚 -->
+  <!-- 1/2 3V3 -->
+  <circle cx="480" cy="176" r="4" fill="#22d3ee"/><text x="492" y="180" class="num">3V3</text>
+  <text x="526" y="180" class="tag" fill="#67e8f9">3V3 轨 → 显示 VCC / TB6612 VCC</text>
+  <circle cx="480" cy="208" r="4" fill="#22d3ee"/><text x="492" y="212" class="num">3V3</text>
+  <text x="526" y="212" class="tag" fill="#67e8f9">同一 3.3V 轨（与上一脚等电位）</text>
+  <circle cx="480" cy="240" r="4" fill="#5c7080"/><text x="492" y="244" class="off">RST</text>
+  <text x="526" y="244" class="off">板载复位键，不接</text>
+
+  <!-- 4~7 音频 -->
+  <circle cx="480" cy="272" r="4" fill="#fbbf24"/><text x="492" y="276" class="num">4</text>
+  <text x="526" y="276" class="tag" fill="#fde68a">BCLK</text>
+  <circle cx="480" cy="304" r="4" fill="#fbbf24"/><text x="492" y="308" class="num">5</text>
+  <text x="526" y="308" class="tag" fill="#fde68a">LRCLK</text>
+  <circle cx="480" cy="336" r="4" fill="#fbbf24"/><text x="492" y="340" class="num">6</text>
+  <text x="526" y="340" class="tag" fill="#fde68a">SDA（功放 TX）</text>
+  <circle cx="480" cy="368" r="4" fill="#fbbf24"/><text x="492" y="372" class="num">7</text>
+  <text x="526" y="372" class="tag" fill="#fde68a">DATA（麦克风 RX）</text>
+
+  <!-- 8 测速 -->
+  <circle cx="480" cy="400" r="4" fill="#2dd4bf"/><text x="492" y="404" class="num">15</text>
+  <text x="526" y="404" class="tag" fill="#5eead4">测速脉冲（U0RTS 复用为普通 IO）</text>
+
+  <!-- 9~11 空闲 -->
+  <circle cx="480" cy="432" r="4" fill="#5c7080"/><text x="492" y="436" class="off">16</text>
+  <text x="526" y="436" class="off">空闲（预留超声 / 循迹）</text>
+  <circle cx="480" cy="464" r="4" fill="#5c7080"/><text x="492" y="468" class="off">17</text>
+  <text x="526" y="468" class="off">空闲</text>
+  <circle cx="480" cy="496" r="4" fill="#5c7080"/><text x="492" y="500" class="off">18</text>
+  <text x="526" y="500" class="off">空闲</text>
+
+  <!-- 12 电压 -->
+  <circle cx="480" cy="528" r="4" fill="#2dd4bf"/><text x="492" y="532" class="num">8</text>
+  <text x="526" y="532" class="tag" fill="#5eead4">电压检测 ADC1_CH7</text>
+
+  <!-- 13/14 strapping -->
+  <circle cx="480" cy="560" r="4" fill="#5c7080"/><text x="492" y="564" class="off">3</text>
+  <text x="526" y="564" class="off">strapping，不用</text>
+  <circle cx="480" cy="592" r="4" fill="#5c7080"/><text x="492" y="596" class="off">46</text>
+  <text x="526" y="596" class="off">strapping，不用</text>
+
+  <!-- 15~20 TFT -->
+  <circle cx="480" cy="624" r="4" fill="#60a5fa"/><text x="492" y="628" class="num">9</text>
+  <text x="526" y="628" class="tag" fill="#bfdbfe">TFT BLK（FSPIHD）</text>
+  <circle cx="480" cy="656" r="4" fill="#60a5fa"/><text x="492" y="660" class="num">10</text>
+  <text x="526" y="660" class="tag" fill="#bfdbfe">TFT CS（FSPICS0）</text>
+  <circle cx="480" cy="688" r="4" fill="#60a5fa"/><text x="492" y="692" class="num">11</text>
+  <text x="526" y="692" class="tag" fill="#bfdbfe">TFT SDA（FSPID）</text>
+  <circle cx="480" cy="720" r="4" fill="#60a5fa"/><text x="492" y="724" class="num">12</text>
+  <text x="526" y="724" class="tag" fill="#bfdbfe">TFT SCLK（FSPICLK）</text>
+  <circle cx="480" cy="752" r="4" fill="#60a5fa"/><text x="492" y="756" class="num">13</text>
+  <text x="526" y="756" class="tag" fill="#bfdbfe">TFT DC（FSPIQ 改作 IO）</text>
+  <circle cx="480" cy="784" r="4" fill="#60a5fa"/><text x="492" y="788" class="num">14</text>
+  <text x="526" y="788" class="tag" fill="#bfdbfe">TFT RESET（FSPIWP 改作 IO）</text>
+
+  <!-- 21/22 电源 -->
+  <circle cx="480" cy="816" r="4" fill="#f472b6"/><text x="492" y="820" class="num">5V</text>
+  <text x="526" y="820" class="tag" fill="#f9a8d4">5V ← DC93512 OUT1</text>
+  <circle cx="480" cy="848" r="4" fill="#4ade80"/><text x="492" y="852" class="num">GND</text>
+  <text x="526" y="852" class="tag" fill="#86efac">公共地</text>
+
+  <!-- 右侧排针：逐脚 -->
+  <circle cx="932" cy="176" r="4" fill="#4ade80"/><text x="920" y="180" class="num" text-anchor="end">GND</text>
+  <circle cx="932" cy="208" r="4" fill="#c084fc"/><text x="920" y="212" class="num" text-anchor="end">43</text>
+  <text x="900" y="212" class="tag" fill="#d8b4fe" text-anchor="end">UART0 TX</text>
+  <circle cx="932" cy="240" r="4" fill="#c084fc"/><text x="920" y="244" class="num" text-anchor="end">44</text>
+  <text x="900" y="244" class="tag" fill="#d8b4fe" text-anchor="end">UART0 RX</text>
+
+  <circle cx="932" cy="272" r="4" fill="#a3e635"/><text x="920" y="276" class="num" text-anchor="end">1</text>
+  <text x="900" y="276" class="tag" fill="#d9f99d" text-anchor="end">#1 PWMA</text>
+  <circle cx="932" cy="304" r="4" fill="#a3e635"/><text x="920" y="308" class="num" text-anchor="end">2</text>
+  <text x="900" y="308" class="tag" fill="#d9f99d" text-anchor="end">#1 AIN1</text>
+  <circle cx="932" cy="336" r="4" fill="#a3e635"/><text x="920" y="340" class="num" text-anchor="end">42</text>
+  <text x="900" y="340" class="tag" fill="#d9f99d" text-anchor="end">#1 AIN2</text>
+  <circle cx="932" cy="368" r="4" fill="#a3e635"/><text x="920" y="372" class="num" text-anchor="end">41</text>
+  <text x="900" y="372" class="tag" fill="#d9f99d" text-anchor="end">#1 STBY</text>
+  <circle cx="932" cy="400" r="4" fill="#a3e635"/><text x="920" y="404" class="num" text-anchor="end">40</text>
+  <text x="900" y="404" class="tag" fill="#d9f99d" text-anchor="end">#2 PWMA</text>
+  <circle cx="932" cy="432" r="4" fill="#a3e635"/><text x="920" y="436" class="num" text-anchor="end">39</text>
+  <text x="900" y="436" class="tag" fill="#d9f99d" text-anchor="end">#2 AIN1</text>
+  <circle cx="932" cy="464" r="4" fill="#a3e635"/><text x="920" y="468" class="num" text-anchor="end">38</text>
+  <text x="900" y="468" class="tag" fill="#d9f99d" text-anchor="end">#2 AIN2</text>
+
+  <circle cx="932" cy="496" r="4" fill="#5c7080"/><text x="920" y="500" class="off" text-anchor="end">37</text>
+  <text x="900" y="500" class="off" text-anchor="end">Flash / PSRAM</text>
+  <circle cx="932" cy="528" r="4" fill="#5c7080"/><text x="920" y="532" class="off" text-anchor="end">36</text>
+  <circle cx="932" cy="560" r="4" fill="#5c7080"/><text x="920" y="564" class="off" text-anchor="end">35</text>
+  <circle cx="932" cy="592" r="4" fill="#5c7080"/><text x="920" y="596" class="off" text-anchor="end">0</text>
+  <text x="900" y="596" class="off" text-anchor="end">strapping</text>
+  <circle cx="932" cy="624" r="4" fill="#5c7080"/><text x="920" y="628" class="off" text-anchor="end">45</text>
+  <text x="900" y="628" class="off" text-anchor="end">strapping</text>
+  <circle cx="932" cy="656" r="4" fill="#5c7080"/><text x="920" y="660" class="off" text-anchor="end">48</text>
+  <text x="900" y="660" class="off" text-anchor="end">板载 RGB（保留）</text>
+
+  <circle cx="932" cy="688" r="4" fill="#a3e635"/><text x="920" y="692" class="num" text-anchor="end">47</text>
+  <text x="900" y="692" class="tag" fill="#d9f99d" text-anchor="end">#2 STBY</text>
+
+  <circle cx="932" cy="720" r="4" fill="#5c7080"/><text x="920" y="724" class="off" text-anchor="end">21</text>
+  <text x="900" y="724" class="off" text-anchor="end">空闲</text>
+  <circle cx="932" cy="752" r="4" fill="#5c7080"/><text x="920" y="756" class="off" text-anchor="end">20</text>
+  <text x="900" y="756" class="off" text-anchor="end">USB_D+</text>
+  <circle cx="932" cy="784" r="4" fill="#5c7080"/><text x="920" y="788" class="off" text-anchor="end">19</text>
+  <text x="900" y="788" class="off" text-anchor="end">USB_D−</text>
+  <circle cx="932" cy="816" r="4" fill="#4ade80"/><text x="920" y="820" class="num" text-anchor="end">GND</text>
+  <circle cx="932" cy="848" r="4" fill="#4ade80"/><text x="920" y="852" class="num" text-anchor="end">GND</text>
+
+  <text x="706" y="836" class="note" text-anchor="middle">数字 = GPIO 编号，与固件宏一一对应</text>
+  <text x="706" y="854" class="note" text-anchor="middle">灰色 = 不可用 / 保留，未接线</text>
+
+  <!-- ===================== 电机区 ===================== -->
+  <rect x="1000" y="68" width="412" height="832" rx="8" fill="#1a1f14" stroke="#a3e635" stroke-width="1.2" stroke-dasharray="6 5"/>
+  <text x="1014" y="90" class="zone" fill="#a3e635">电机区 · 右侧排针</text>
+
+  <rect x="1012" y="212" width="388" height="168" rx="6" fill="#141a10" stroke="#a3e635" stroke-width="1.5"/>
+  <text x="1026" y="238" class="name" fill="#bef264">TB6612 #1 · 左侧（左前 + 左后并联）</text>
+  <circle cx="1012" cy="272" r="4" fill="#a3e635"/><text x="1026" y="275" class="pin">PWMA · 20 kHz PWM</text>
+  <text x="1032" y="275" class="gpio" fill="#d9f99d">GPIO1</text>
+  <circle cx="1012" cy="304" r="4" fill="#a3e635"/><text x="1026" y="307" class="pin">AIN1 · 方向位 1</text>
+  <text x="1032" y="307" class="gpio" fill="#d9f99d">GPIO2</text>
+  <circle cx="1012" cy="336" r="4" fill="#a3e635"/><text x="1026" y="339" class="pin">AIN2 · 方向位 2</text>
+  <text x="1032" y="339" class="gpio" fill="#d9f99d">GPIO42</text>
+  <circle cx="1012" cy="368" r="4" fill="#a3e635"/><text x="1026" y="371" class="pin">STBY · 高有效</text>
+  <text x="1032" y="371" class="gpio" fill="#d9f99d">GPIO41</text>
+
+  <rect x="1012" y="388" width="388" height="328" rx="6" fill="#141a10" stroke="#a3e635" stroke-width="1.5"/>
+  <text x="1026" y="414" class="name" fill="#bef264">TB6612 #2 · 右侧（右前 + 右后并联）</text>
+  <circle cx="1012" cy="400" r="4" fill="#a3e635"/><text x="1026" y="403" class="pin">PWMA · 20 kHz PWM</text>
+  <text x="1032" y="403" class="gpio" fill="#d9f99d">GPIO40</text>
+  <circle cx="1012" cy="432" r="4" fill="#a3e635"/><text x="1026" y="435" class="pin">AIN1 · 方向位 1</text>
+  <text x="1032" y="435" class="gpio" fill="#d9f99d">GPIO39</text>
+  <circle cx="1012" cy="464" r="4" fill="#a3e635"/><text x="1026" y="467" class="pin">AIN2 · 方向位 2</text>
+  <text x="1032" y="467" class="gpio" fill="#d9f99d">GPIO38</text>
+
+  <text x="1026" y="502" class="tag">GPIO26~37 / GPIO0、45 / GPIO48 插在中间，</text>
+  <text x="1026" y="520" class="tag">所以 #2 的 STBY 用 GPIO47，单独拉一根。</text>
+  <text x="1026" y="548" class="tag">VM ◄ 电池原始电压（不经 DC93512）</text>
+  <text x="1026" y="566" class="tag">VCC ◄ 3V3 逻辑电 · GND 与主控共地</text>
+  <text x="1026" y="584" class="tag">AO1 / AO2 → 右前 + 右后并联</text>
+  <text x="1026" y="602" class="tag">B 通道不用：BIN1 / BIN2 / PWMB 接地，BO1/BO2 悬空</text>
+  <text x="1026" y="620" class="tag">上电默认 STBY 低、PWM 0；发命令后 STBY 才拉高</text>
+
+  <circle cx="1012" cy="688" r="4" fill="#a3e635"/><text x="1026" y="691" class="pin">STBY · 高有效（单独一根较长）</text>
+  <text x="1032" y="691" class="gpio" fill="#d9f99d">GPIO47</text>
+
+  <text x="1026" y="760" class="name" fill="#bef264">驱动内部逐脚接线</text>
+  <text x="1026" y="780" class="tag">见 电机驱动接线图.svg（两片同构，按丝印 16 脚）</text>
+  <text x="1026" y="806" class="tag">#1 左前+左后并联到 AO1/AO2；#2 右前+右后并联</text>
+  <text x="1026" y="824" class="tag">同侧两轮永远同速，差速靠两片占空比不同</text>
+  <text x="1026" y="850" class="tag" fill="#f9a8d4">VM 必须接电池原始电压（6.0~8.4 V），不能接 5V</text>
+
+  <!-- ===================== 左侧信号连线 ===================== -->
+  <line x1="408" y1="272" x2="480" y2="272" stroke="#fbbf24" stroke-width="2"/>
+  <line x1="408" y1="304" x2="480" y2="304" stroke="#fbbf24" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="408" y1="336" x2="480" y2="336" stroke="#fbbf24" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="408" y1="368" x2="480" y2="368" stroke="#fbbf24" stroke-width="2" stroke-opacity="0.85"/>
+
+  <line x1="408" y1="400" x2="480" y2="400" stroke="#2dd4bf" stroke-width="2"/>
+  <line x1="408" y1="528" x2="480" y2="528" stroke="#2dd4bf" stroke-width="2"/>
+
+  <line x1="408" y1="624" x2="480" y2="624" stroke="#60a5fa" stroke-width="2"/>
+  <line x1="408" y1="656" x2="480" y2="656" stroke="#60a5fa" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="408" y1="688" x2="480" y2="688" stroke="#60a5fa" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="408" y1="720" x2="480" y2="720" stroke="#60a5fa" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="408" y1="752" x2="480" y2="752" stroke="#60a5fa" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="408" y1="784" x2="480" y2="784" stroke="#60a5fa" stroke-width="2" stroke-opacity="0.85"/>
+
+  <!-- ===================== 右侧信号连线 ===================== -->
+  <line x1="932" y1="272" x2="1012" y2="272" stroke="#a3e635" stroke-width="2"/>
+  <line x1="932" y1="304" x2="1012" y2="304" stroke="#a3e635" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="932" y1="336" x2="1012" y2="336" stroke="#a3e635" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="932" y1="368" x2="1012" y2="368" stroke="#a3e635" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="932" y1="400" x2="1012" y2="400" stroke="#a3e635" stroke-width="2"/>
+  <line x1="932" y1="432" x2="1012" y2="432" stroke="#a3e635" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="932" y1="464" x2="1012" y2="464" stroke="#a3e635" stroke-width="2" stroke-opacity="0.85"/>
+  <line x1="932" y1="688" x2="1012" y2="688" stroke="#a3e635" stroke-width="2" stroke-opacity="0.85"/>
+
+  <!-- ===================== 说明 / 图例 ===================== -->
+  <text x="720" y="922" class="tag" fill="#86efac" text-anchor="middle">GND 共地：主控 / 显示 / 音频 / 两块 TB6612 / DC93512 / 电池负极（公共地以文字标注，未逐根画线）</text>
+
+  <text x="28" y="948" class="tag">复用 ①：GPIO9~14 = FSPI(SPI2) 原生 HD/CS0/D/CLK/Q/WP → TFT（DC、RESET 借用 Q、WP）</text>
+  <text x="28" y="966" class="tag">复用 ②：GPIO39~42 = JTAG（MTCK/MTDO/MTDI/MTMS）→ 电机信号：只失去外接 JTAG 探针，内置 USB-JTAG 仍可用；GPIO15 = U0RTS → 测速（不用硬件流控）</text>
+  <text x="28" y="984" class="tag">复用 ③：GPIO1/2 = ADC1_CH0/CH1 → 电机 PWM / IN1，只做数字输出，ADC 不启用；GPIO48 = 板载 RGB，保留不接</text>
+  <text x="28" y="1002" class="tag">不可用：GPIO26~37（Flash / PSRAM）· GPIO0/3/45/46（strapping）· GPIO19/20（USB）· GPIO43/44（UART0 日志）</text>
+  <text x="28" y="1020" class="tag" fill="#f9a8d4">板载 RGB 版本差异：DevKitC-1 v1.0 = GPIO48（本方案空着）；v1.1 = GPIO38（作 #2 AIN2，转向时灯会变色，仅外观）</text>
+
+  <circle cx="60" cy="1046" r="4" fill="#22d3ee"/><text x="70" y="1049" class="tag">主控 / 3V3</text>
+  <circle cx="170" cy="1046" r="4" fill="#60a5fa"/><text x="180" y="1049" class="tag">显示</text>
+  <circle cx="250" cy="1046" r="4" fill="#fbbf24"/><text x="260" y="1049" class="tag">音频</text>
+  <circle cx="330" cy="1046" r="4" fill="#a3e635"/><text x="340" y="1049" class="tag">电机</text>
+  <circle cx="410" cy="1046" r="4" fill="#f472b6"/><text x="420" y="1049" class="tag">供电 / 5V</text>
+  <circle cx="510" cy="1046" r="4" fill="#c084fc"/><text x="520" y="1049" class="tag">串口</text>
+  <circle cx="590" cy="1046" r="4" fill="#2dd4bf"/><text x="600" y="1049" class="tag">电压检测 / 测速</text>
+  <circle cx="730" cy="1046" r="4" fill="#5c7080"/><text x="740" y="1049" class="tag">不可用 / 保留</text>
+  <text x="1400" y="1049" class="tag" text-anchor="end">引脚与固件一致：m.h / platformio.ini(TFT_*) / AudioBus.h / Motor.cpp / Sensor.h</text>
+</svg>

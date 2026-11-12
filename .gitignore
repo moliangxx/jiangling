@@ -1,24 +1,31 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-
-# 协议正文唯一来源：d:\Esp32Project\index\江灵通信协议\（五份分册）
-# 本工程不再保留任何协议副本，需要时直接去 index 查
-/BLE通信协议/
-BLE通信协议/
-江灵通信协议.md
-江灵通信协议-单文件版.md
+# ---------- Android（JiangLing_app） ----------
+build/
+.gradle/
 .idea/
 .kotlin/
+local.properties
+*.iml
+.cxx/
+.externalNativeBuild/
+captures/
+*.apk
+*.aab
+*.jks
+*.keystore
+*.hprof
+
+# ---------- 固件（JiangLing_ctrl / PlatformIO） ----------
+.pio/
+.vscode/
+build/
+*.log
+*.bin
+*.elf
+*.map
+
+# ---------- 公共 ----------
+.trae/
+_cleanup_backup_*/
+*.bak
+.DS_Store
+Thumbs.db

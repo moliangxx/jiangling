@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1000" font-family="Noto Sans SC, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff7ed"/>
+      <stop offset="1" stop-color="#ffedd5"/>
+    </linearGradient>
+    <linearGradient id="pcb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dc2626"/>
+      <stop offset="1" stop-color="#991b1b"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1500" height="1000" fill="url(#bg)"/>
+
+  <text x="40" y="55" font-size="28" font-weight="700" fill="#0f172a">TB6612FNG 电机驱动模块 · 引脚功能图</text>
+  <text x="40" y="85" font-size="15" fill="#475569">双路 H 桥 · 工作电流 1.2A · 峰值 3.2A · 两侧各 8Pin 排针 · 驱动 2 个直流电机</text>
+
+  <!-- PCB 主体 -->
+  <rect x="300" y="150" width="900" height="670" rx="10" fill="url(#pcb)" stroke="#7f1d1d" stroke-width="2"/>
+
+  <!-- 芯片 -->
+  <rect x="600" y="340" width="300" height="150" rx="6" fill="#1f2937" stroke="#4b5563"/>
+  <text x="750" y="405" font-size="20" font-weight="700" fill="#f9fafb" text-anchor="middle">TB6612FNG</text>
+  <text x="750" y="435" font-size="12" fill="#d1d5db" text-anchor="middle">双路 H 桥电机驱动</text>
+  <text x="750" y="455" font-size="11" fill="#9ca3af" text-anchor="middle">工作 1.2A / 峰值 3.2A</text>
+
+  <!-- 排针组标注 -->
+  <text x="330" y="140" font-size="13" font-weight="700" fill="#fecaca">左侧排针（正面丝印 · 上→下）</text>
+  <text x="1110" y="140" font-size="13" font-weight="700" fill="#fecaca">右侧排针（反面丝印 · 上→下）</text>
+
+  <!-- 左侧排针 8 格 + 功能说明 -->
+  <g font-size="12" font-weight="700">
+    <!-- 第1格 PWMA -->
+    <rect x="330" y="160" width="64" height="62" rx="4" fill="#8b5cf6"/>
+    <text x="362" y="196" fill="#fff" text-anchor="middle">PWMA</text>
+    <rect x="30" y="160" width="270" height="62" rx="4" fill="#ede9fe"/>
+    <text x="40" y="182" font-size="12" fill="#5b21b6">电机A 调速</text>
+    <text x="40" y="202" font-size="11" fill="#6d28d9">PWM 输入 · 占空比控速</text>
+
+    <!-- 第2格 AIN2 -->
+    <rect x="330" y="230" width="64" height="62" rx="4" fill="#3b82f6"/>
+    <text x="362" y="266" fill="#fff" text-anchor="middle">AIN2</text>
+    <rect x="30" y="230" width="270" height="62" rx="4" fill="#dbeafe"/>
+    <text x="40" y="252" font-size="12" fill="#1e3a8a">电机A 方向控制2</text>
+    <text x="40" y="272" font-size="11" fill="#1d4ed8">与 AIN1 配合定正反转</text>
+
+    <!-- 第3格 AIN1 -->
+    <rect x="330" y="300" width="64" height="62" rx="4" fill="#3b82f6"/>
+    <text x="362" y="336" fill="#fff" text-anchor="middle">AIN1</text>
+    <rect x="30" y="300" width="270" height="62" rx="4" fill="#dbeafe"/>
+    <text x="40" y="322" font-size="12" fill="#1e3a8a">电机A 方向控制1</text>
+    <text x="40" y="342" font-size="11" fill="#1d4ed8">与 AIN2 配合定正反转</text>
+
+    <!-- 第4格 STBY -->
+    <rect x="330" y="370" width="64" height="62" rx="4" fill="#f97316"/>
+    <text x="362" y="406" fill="#fff" text-anchor="middle">STBY</text>
+    <rect x="30" y="370" width="270" height="62" rx="4" fill="#ffedd5"/>
+    <text x="40" y="392" font-size="12" fill="#7c2d12">待机控制</text>
+    <text x="40" y="412" font-size="11" fill="#c2410c">高=工作 · 低=休眠</text>
+
+    <!-- 第5格 BIN1 -->
+    <rect x="330" y="440" width="64" height="62" rx="4" fill="#3b82f6"/>
+    <text x="362" y="476" fill="#fff" text-anchor="middle">BIN1</text>
+    <rect x="30" y="440" width="270" height="62" rx="4" fill="#dbeafe"/>
+    <text x="40" y="462" font-size="12" fill="#1e3a8a">电机B 方向控制1</text>
+    <text x="40" y="482" font-size="11" fill="#1d4ed8">与 BIN2 配合定正反转</text>
+
+    <!-- 第6格 BIN2 -->
+    <rect x="330" y="510" width="64" height="62" rx="4" fill="#3b82f6"/>
+    <text x="362" y="546" fill="#fff" text-anchor="middle">BIN2</text>
+    <rect x="30" y="510" width="270" height="62" rx="4" fill="#dbeafe"/>
+    <text x="40" y="532" font-size="12" fill="#1e3a8a">电机B 方向控制2</text>
+    <text x="40" y="552" font-size="11" fill="#1d4ed8">与 BIN1 配合定正反转</text>
+
+    <!-- 第7格 PWMB -->
+    <rect x="330" y="580" width="64" height="62" rx="4" fill="#8b5cf6"/>
+    <text x="362" y="616" fill="#fff" text-anchor="middle">PWMB</text>
+    <rect x="30" y="580" width="270" height="62" rx="4" fill="#ede9fe"/>
+    <text x="40" y="602" font-size="12" fill="#5b21b6">电机B 调速</text>
+    <text x="40" y="622" font-size="11" fill="#6d28d9">PWM 输入 · 占空比控速</text>
+
+    <!-- 第8格 GND -->
+    <rect x="330" y="650" width="64" height="62" rx="4" fill="#1e293b"/>
+    <text x="362" y="686" fill="#fff" text-anchor="middle">GND</text>
+    <rect x="30" y="650" width="270" height="62" rx="4" fill="#e2e8f0"/>
+    <text x="40" y="672" font-size="12" fill="#334155">地</text>
+    <text x="40" y="692" font-size="11" fill="#475569">与主控/电池共地</text>
+  </g>
+
+  <!-- 右侧排针 8 格 + 功能说明 -->
+  <g font-size="12" font-weight="700">
+    <!-- 第1格 VM -->
+    <rect x="1106" y="160" width="64" height="62" rx="4" fill="#fbbf24"/>
+    <text x="1138" y="196" fill="#0f172a" text-anchor="middle">VM</text>
+    <rect x="1200" y="160" width="270" height="62" rx="4" fill="#fef3c7"/>
+    <text x="1210" y="182" font-size="12" fill="#78350f">电机电源输入</text>
+    <text x="1210" y="202" font-size="11" fill="#b45309">2.5~13.5V · 接电池正极</text>
+
+    <!-- 第2格 VCC -->
+    <rect x="1106" y="230" width="64" height="62" rx="4" fill="#fbbf24"/>
+    <text x="1138" y="266" fill="#0f172a" text-anchor="middle">VCC</text>
+    <rect x="1200" y="230" width="270" height="62" rx="4" fill="#fef3c7"/>
+    <text x="1210" y="252" font-size="12" fill="#78350f">逻辑电源</text>
+    <text x="1210" y="272" font-size="11" fill="#b45309">2.7~5.5V · 接主控3.3V</text>
+
+    <!-- 第3格 GND -->
+    <rect x="1106" y="300" width="64" height="62" rx="4" fill="#1e293b"/>
+    <text x="1138" y="336" fill="#fff" text-anchor="middle">GND</text>
+    <rect x="1200" y="300" width="270" height="62" rx="4" fill="#e2e8f0"/>
+    <text x="1210" y="322" font-size="12" fill="#334155">地</text>
+    <text x="1210" y="342" font-size="11" fill="#475569">与主控/电池共地</text>
+
+    <!-- 第4格 AO1 -->
+    <rect x="1106" y="370" width="64" height="62" rx="4" fill="#22c55e"/>
+    <text x="1138" y="406" fill="#fff" text-anchor="middle">AO1</text>
+    <rect x="1200" y="370" width="270" height="62" rx="4" fill="#dcfce7"/>
+    <text x="1210" y="392" font-size="12" fill="#14532d">电机A 输出1</text>
+    <text x="1210" y="412" font-size="11" fill="#15803d">接电机A 一根线</text>
+
+    <!-- 第5格 AO2 -->
+    <rect x="1106" y="440" width="64" height="62" rx="4" fill="#22c55e"/>
+    <text x="1138" y="476" fill="#fff" text-anchor="middle">AO2</text>
+    <rect x="1200" y="440" width="270" height="62" rx="4" fill="#dcfce7"/>
+    <text x="1210" y="462" font-size="12" fill="#14532d">电机A 输出2</text>
+    <text x="1210" y="482" font-size="11" fill="#15803d">接电机A 另一根线</text>
+
+    <!-- 第6格 BO2 -->
+    <rect x="1106" y="510" width="64" height="62" rx="4" fill="#22c55e"/>
+    <text x="1138" y="546" fill="#fff" text-anchor="middle">BO2</text>
+    <rect x="1200" y="510" width="270" height="62" rx="4" fill="#dcfce7"/>
+    <text x="1210" y="532" font-size="12" fill="#14532d">电机B 输出2</text>
+    <text x="1210" y="552" font-size="11" fill="#15803d">接电机B 一根线</text>
+
+    <!-- 第7格 BO1 -->
+    <rect x="1106" y="580" width="64" height="62" rx="4" fill="#22c55e"/>
+    <text x="1138" y="616" fill="#fff" text-anchor="middle">BO1</text>
+    <rect x="1200" y="580" width="270" height="62" rx="4" fill="#dcfce7"/>
+    <text x="1210" y="602" font-size="12" fill="#14532d">电机B 输出1</text>
+    <text x="1210" y="622" font-size="11" fill="#15803d">接电机B 另一根线</text>
+
+    <!-- 第8格 GND -->
+    <rect x="1106" y="650" width="64" height="62" rx="4" fill="#1e293b"/>
+    <text x="1138" y="686" fill="#fff" text-anchor="middle">GND</text>
+    <rect x="1200" y="650" width="270" height="62" rx="4" fill="#e2e8f0"/>
+    <text x="1210" y="672" font-size="12" fill="#334155">地</text>
+    <text x="1210" y="692" font-size="11" fill="#475569">与主控/电池共地</text>
+  </g>
+
+  <!-- 方向真值表 -->
+  <rect x="30" y="745" width="1440" height="75" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="50" y="772" font-size="14" font-weight="700" fill="#0f172a">方向真值表（以 A 路为例，B 路同理）</text>
+  <text x="50" y="798" font-size="12" fill="#334155">AIN1=H AIN2=L → 正转（AO1+, AO2-）　　AIN1=L AIN2=H → 反转（AO1-, AO2+）　　AIN1=AIN2=L → 刹车（短路刹车）</text>
+
+  <!-- 底部注意事项 -->
+  <rect x="30" y="835" width="1440" height="150" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="50" y="865" font-size="16" font-weight="700" fill="#0f172a">⚠ 注意事项</text>
+  <text x="50" y="893" font-size="13" fill="#475569">1. 排针位置：左侧排针=控制信号（PWMA/AIN1/AIN2/STBY/BIN1/BIN2/PWMB/GND），右侧排针=电源与输出（VM/VCC/GND/AO1/AO2/BO2/BO1/GND），顺序以实物丝印为准。</text>
+  <text x="50" y="917" font-size="13" fill="#475569">2. VM 接电池正极（7.4V），VCC 接主控 3.3V（勿接 5V 会烧芯片）；GND 三路共地（电池/主控/模块）。</text>
+  <text x="50" y="941" font-size="13" fill="#475569">3. 每片驱动 2 个电机；本项目 4 电机用 2 片。STBY 必须接 GPIO 并拉高才工作，悬空可能休眠。</text>
+  <text x="50" y="965" font-size="13" fill="#475569">4. 本模块 GPIO 分配（config.h）：M1→PWMA=GPIO1/PWMB=2/AIN1=4/AIN2=5/BIN1=6/BIN2=7/STBY=8；M2→PWMA=9/PWMB=10/AIN1=11/AIN2=12/BIN1=13/BIN2=14/STBY=15。</text>
+</svg>

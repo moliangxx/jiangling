@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1000" font-family="Noto Sans SC, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fefce8"/>
+      <stop offset="1" stop-color="#fef9c3"/>
+    </linearGradient>
+    <linearGradient id="pcb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#0b1220"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#fbbf24"/>
+    </marker>
+  </defs>
+
+  <rect width="1500" height="1000" fill="url(#bg)"/>
+
+  <text x="40" y="55" font-size="26" font-weight="700" fill="#0f172a">功放+麦克风一体模块 · 引脚功能图（实物丝印对照）</text>
+  <text x="40" y="85" font-size="15" fill="#475569">7 脚 2.54mm 排针 · 板面标 VCC3.3~5 · JST 座小喇叭 · 与 ESP32-S3 单 I2S 口全双工连接</text>
+
+  <!-- 模块本体 -->
+  <rect x="180" y="150" width="1050" height="330" rx="10" fill="url(#pcb)" stroke="#334155" stroke-width="2"/>
+  <text x="215" y="195" font-size="19" font-weight="700" fill="#e5e7eb">功放+麦克风模块</text>
+  <text x="1195" y="195" font-size="14" font-weight="700" fill="#fbbf24" text-anchor="end">VCC3.3~5</text>
+  <text x="215" y="225" font-size="12" fill="#94a3b8">MAX98357A 功放 + INMP441 麦克风板载一体 · 背面丝印分组 SPK / MIC / PWR</text>
+
+  <!-- 模块内部示意 -->
+  <rect x="230" y="255" width="150" height="90" rx="8" fill="#1f2937" stroke="#475569"/>
+  <text x="305" y="285" font-size="12" fill="#fbbf24" text-anchor="middle">MEMS 麦克风</text>
+  <text x="305" y="307" font-size="11" fill="#cbd5e1" text-anchor="middle">INMP441</text>
+  <text x="305" y="325" font-size="10" fill="#94a3b8" text-anchor="middle">24bit / I2S</text>
+
+  <rect x="430" y="255" width="150" height="90" rx="8" fill="#1f2937" stroke="#475569"/>
+  <text x="505" y="285" font-size="12" fill="#fbbf24" text-anchor="middle">D 类功放</text>
+  <text x="505" y="307" font-size="11" fill="#cbd5e1" text-anchor="middle">MAX98357A</text>
+  <text x="505" y="325" font-size="10" fill="#94a3b8" text-anchor="middle">I2S / 3.2W</text>
+
+  <path d="M380 300 H430" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="405" y="292" font-size="10" fill="#fbbf24" text-anchor="middle">DATA</text>
+
+  <!-- JST 喇叭座 -->
+  <rect x="1000" y="245" width="110" height="55" rx="5" fill="#7c2d12" stroke="#f97316" stroke-width="2"/>
+  <text x="1055" y="268" font-size="10" fill="#fed7aa" text-anchor="middle">JST 喇叭座</text>
+  <text x="1055" y="288" font-size="9" fill="#fdba74" text-anchor="middle">SPK+ / SPK−</text>
+  <path d="M1110 258 C1140 240, 1160 240, 1180 258" stroke="#ef4444" stroke-width="2.5" fill="none"/>
+  <path d="M1110 286 C1140 304, 1160 304, 1180 286" stroke="#0f172a" stroke-width="2.5" fill="none"/>
+  <circle cx="1210" cy="272" r="26" fill="#1f2937" stroke="#64748b"/>
+  <text x="1210" y="277" font-size="12" fill="#e2e8f0" text-anchor="middle">喇叭</text>
+  <text x="1235" y="230" font-size="10" fill="#b45309">只从 JST 座接，勿反接</text>
+
+  <!-- 分组括号 -->
+  <path d="M210 420 V405 H575 V420" stroke="#2563eb" stroke-width="2" fill="none"/>
+  <text x="392" y="398" font-size="13" font-weight="700" fill="#1d4ed8" text-anchor="middle">SPK（功放侧）</text>
+
+  <path d="M600 420 V405 H705 V420" stroke="#16a34a" stroke-width="2" fill="none"/>
+  <text x="652" y="398" font-size="13" font-weight="700" fill="#15803d" text-anchor="middle">MIC</text>
+
+  <text x="785" y="402" font-size="12" font-weight="700" fill="#b45309" text-anchor="middle">待确认 / 预留</text>
+
+  <path d="M860 420 V405 H1095 V420" stroke="#dc2626" stroke-width="2" fill="none"/>
+  <text x="977" y="398" font-size="13" font-weight="700" fill="#b91c1c" text-anchor="middle">PWR</text>
+
+  <!-- 7 个引脚 -->
+  <g>
+    <!-- 0 LRCLK -->
+    <rect x="220" y="480" width="90" height="52" rx="4" fill="#2563eb"/>
+    <text x="265" y="512" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">LRCLK</text>
+    <text x="265" y="560" font-size="13" font-weight="700" fill="#1e3a8a" text-anchor="middle">I2S 字时钟</text>
+    <text x="265" y="584" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">GPIO5</text>
+    <text x="265" y="606" font-size="10" fill="#64748b" text-anchor="middle">麦 + 功放共用 · GPIO5</text>
+
+    <!-- 1 BCLK -->
+    <rect x="350" y="480" width="90" height="52" rx="4" fill="#2563eb"/>
+    <text x="395" y="512" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">BCLK</text>
+    <text x="395" y="560" font-size="13" font-weight="700" fill="#1e3a8a" text-anchor="middle">I2S 位时钟</text>
+    <text x="395" y="584" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">GPIO4</text>
+    <text x="395" y="606" font-size="10" fill="#64748b" text-anchor="middle">麦 + 功放共用 · GPIO4</text>
+
+    <!-- 2 SDA -->
+    <rect x="480" y="480" width="90" height="52" rx="4" fill="#ea580c"/>
+    <text x="525" y="512" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">SDA</text>
+    <text x="525" y="560" font-size="13" font-weight="700" fill="#9a3412" text-anchor="middle">功放数据输入 TX</text>
+    <text x="525" y="584" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">GPIO6</text>
+    <text x="525" y="606" font-size="10" fill="#9a3412" text-anchor="middle">SPK 组 · GPIO6</text>
+
+    <!-- 3 DATA -->
+    <rect x="610" y="480" width="90" height="52" rx="4" fill="#16a34a"/>
+    <text x="655" y="512" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">DATA</text>
+    <text x="655" y="560" font-size="13" font-weight="700" fill="#166534" text-anchor="middle">麦克风数据 RX</text>
+    <text x="655" y="584" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">GPIO7</text>
+    <text x="655" y="606" font-size="10" fill="#166534" text-anchor="middle">MIC 组 · GPIO7</text>
+
+    <!-- 4 CLK -->
+    <rect x="740" y="480" width="90" height="52" rx="4" fill="#a16207"/>
+    <text x="785" y="512" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">CLK</text>
+    <text x="785" y="560" font-size="13" font-weight="700" fill="#78350f" text-anchor="middle">MCLK / 预留</text>
+    <text x="785" y="584" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">默认不接</text>
+    <text x="785" y="606" font-size="10" fill="#78350f" text-anchor="middle">无数据时再试 MCLK</text>
+
+    <!-- 5 VCC -->
+    <rect x="870" y="480" width="90" height="52" rx="4" fill="#dc2626"/>
+    <text x="915" y="512" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">VCC</text>
+    <text x="915" y="560" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">电源 3.3~5V</text>
+    <text x="915" y="584" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">DC93512 5V</text>
+    <text x="915" y="606" font-size="10" fill="#991b1b" text-anchor="middle">独立一路，勿从主板取</text>
+
+    <!-- 6 GND -->
+    <rect x="1000" y="480" width="90" height="52" rx="4" fill="#1e293b"/>
+    <text x="1045" y="512" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">GND</text>
+    <text x="1045" y="560" font-size="13" font-weight="700" fill="#334155" text-anchor="middle">地</text>
+    <text x="1045" y="584" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">GND</text>
+    <text x="1045" y="606" font-size="10" fill="#475569" text-anchor="middle">与 ESP32 / 降压共地</text>
+  </g>
+
+  <!-- 说明区 -->
+  <rect x="40" y="650" width="1420" height="300" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="65" y="685" font-size="15" font-weight="700" fill="#92400e">判定依据与排查顺序</text>
+  <text x="65" y="717" font-size="13" fill="#78350f">1. SDA / DATA 归属：按实物背面丝印分组，LRCLK/BCLK/SDA 属 SPK，DATA 属 MIC，VCC/GND 属 PWR。因此 SDA=功放输入、DATA=麦克风输出；换批次仍可能对调。</text>
+  <text x="65" y="745" font-size="13" fill="#78350f">2. 实测判定：把两根数据脚分别当 RX 读一轮，RMS 随声音起伏的那根是麦克风；另一根用 Speaker 播测试音，能听到声音的那根是功放输入。</text>
+  <text x="65" y="773" font-size="13" fill="#78350f">3. CLK：丝印有 CLK，当前无 MCLK 需求，默认悬空。若麦克风完全无数据，确认数据脚/供电后，再把 CLK 当 MCLK：16 kHz × 256 = 4.096 MHz，</text>
+  <text x="130" y="795" font-size="13" fill="#78350f">可把 AudioBus::PIN_I2S_MCLK 改成空闲脚 GPIO16/17/18 之一。</text>
+  <text x="65" y="823" font-size="13" fill="#78350f">4. 声道：丝印无 L/R/MC，默认左槽。若时钟/供电/数据都正常但数据全 0，把 AudioBus::MIC_SLOT_MASK 改成 I2S_STD_SLOT_RIGHT。</text>
+  <text x="65" y="851" font-size="13" fill="#78350f">5. 喇叭：只从 JST 座接入，不要往功放输出端反接；音量由模块 GAIN 固定，固件无软件音量。</text>
+  <text x="65" y="883" font-size="12" font-weight="700" fill="#b91c1c">⚠ 引脚、GPIO 必须与《01-硬件配置文档.md》第八节和 src/audio/AudioBus.h 的常量保持一致。</text>
+  <text x="65" y="915" font-size="12" fill="#92400e">供电提示：模块支持 3.3~5V；推荐 DC93512 单独一路 5V 给功放，电位器先用万用表调准再接负载。</text>
+</svg>
